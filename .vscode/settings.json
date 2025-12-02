@@ -1,0 +1,7 @@
+{
+  "[csharp]": {
+    "editor.maxTokenizationLineLength": 2500,
+    "editor.defaultFormatter": "ms-dotnettools.csharp",
+    "editor.formatOnSave": true,
+  }
+}
