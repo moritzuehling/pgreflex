@@ -1,0 +1,37 @@
+{
+  "name": "pgreglex",
+  "version": "0.0.1",
+  "description": "Reactive Postgres",
+  "type": "module",
+  "license": "MIT",
+  "homepage": "https://github.com/moritzuehling/pgreflex",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/moritzuehling/pgreflex.git"
+  },
+  "author": "Moritz Uehling <git@moritzuehling.de>",
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/index.mjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "exports": {
+    ".": "./dist/index.mjs",
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "test": "vitest",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "pnpm run build"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "bumpp": "^10.3.1",
+    "tsdown": "^0.16.8",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.9"
+  }
+}
