@@ -1,3 +1,4 @@
-export function fn() {
-  return 'Hello, tsdown!'
+export function testFunction() {
+  console.log("lmao");
+  return "Hello, tsdown!";
 }

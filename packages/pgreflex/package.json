@@ -1,5 +1,5 @@
 {
-  "name": "pgreglex",
+  "name": "pgreflex",
   "version": "0.0.1",
   "description": "Reactive Postgres",
   "type": "module",
