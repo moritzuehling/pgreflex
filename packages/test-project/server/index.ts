@@ -1,17 +1,12 @@
-import { initTRPC } from "@trpc/server";
 import { createBunHttpHandler } from "trpc-bun-adapter";
+import { appRouter } from "./router";
 
-const t = initTRPC.create();
-
-export const router = t.router({
-  ping: t.procedure.query(() => "pong"),
-});
 const createContext = () => ({
   user: 1,
 });
 
 const bunHandler = createBunHttpHandler({
-  router,
+  router: appRouter,
   // optional arguments:
   endpoint: "/trpc", // Default to ""
   createContext,
@@ -33,7 +28,7 @@ Bun.serve({
   fetch(request, response) {
     return (
       bunHandler(request, response) ??
-      new Response("Websocket Running", { status: 404 })
+      new Response("Server Running", { status: 404 })
     );
   },
 });

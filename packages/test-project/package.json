@@ -10,8 +10,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.90.12",
     "@trpc/client": "^11.7.2",
     "@trpc/server": "^11.7.2",
+    "@trpc/tanstack-react-query": "^11.7.2",
     "@types/bun": "latest",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
