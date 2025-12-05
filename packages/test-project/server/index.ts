@@ -11,12 +11,7 @@ const bunHandler = createBunHttpHandler({
   endpoint: "/trpc", // Default to ""
   createContext,
   onError: console.error,
-  responseMeta() {
-    return {
-      status: 202,
-      headers: {},
-    };
-  },
+  allowMethodOverride: true,
   batching: {
     enabled: true,
   },
