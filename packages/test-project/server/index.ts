@@ -28,7 +28,7 @@ Bun.serve({
   fetch(request, response) {
     return (
       bunHandler(request, response) ??
-      new Response("Server Running", { status: 404 })
+      new Response(`Server running! ${request.url}`, { status: 404 })
     );
   },
 });
