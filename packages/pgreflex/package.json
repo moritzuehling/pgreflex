@@ -18,6 +18,7 @@
   "types": "./dist/index.d.mts",
   "exports": {
     ".": "./dist/index.mjs",
+    "./trpc": "./dist/trpc.mjs",
     "./package.json": "./package.json"
   },
   "scripts": {
@@ -33,5 +34,8 @@
     "tsdown": "^0.16.8",
     "typescript": "^5.9.3",
     "vitest": "^4.0.9"
+  },
+  "peerDependencies": {
+    "@trpc/server": "^11.0.0"
   }
 }
