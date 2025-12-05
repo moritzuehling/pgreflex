@@ -16,7 +16,7 @@ type ArgumentTypes<F extends Function> = F extends (...args: infer A) => unknown
   ? A
   : never;
 
-export function subscribe<
+export function reflexSubscription<
   TContext,
   TMeta,
   TContextOverrides,
