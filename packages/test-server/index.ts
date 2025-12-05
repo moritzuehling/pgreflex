@@ -1,5 +1,17 @@
-import { testFunction } from "pgreflex";
+import { initTRPC } from "@trpc/server";
+import { createBunServeHandler, createBunWSHandler, type CreateBunContextOptions } from "trpc-bun-adapter";
 
-console.log("Hello via Bun!");
+const t = initTRPC.create();
 
-testFunction();
+export const router = t.router({
+  ping: t.procedure.query(() => "pong"),
+});
+const createContext = (opts: CreateBunContextOptions) => ({});
+const websocket = createBunWSHandler({
+  router,
+  createContext,
+  onError: console.error,
+  batching: {
+    enabled: true,
+  },
+});
