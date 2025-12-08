@@ -36,6 +36,8 @@
     "vitest": "^4.0.9"
   },
   "peerDependencies": {
-    "@trpc/server": "^11.0.0"
-  }
+    "@trpc/server": "^11.0.0",
+    "drizzle-orm": "^0.45.0"
+  },
+  "dependencies": {}
 }
