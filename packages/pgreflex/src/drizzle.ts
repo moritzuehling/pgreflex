@@ -21,7 +21,7 @@ import type {
   SelectedFields,
 } from "drizzle-orm/pg-core";
 
-type AnyPgDb = PgDatabase<PgQueryResultHKT>;
+export type AnyPgDb = PgDatabase<PgQueryResultHKT>;
 
 type TypedColumns<T extends AnyPgTable, Q extends ColumnDataType> = {
   [C in keyof T["_"]["columns"]]: T["_"]["columns"][C]["dataType"] extends Q
@@ -50,7 +50,41 @@ interface SelectConfig<T extends AnyPgTable> {
   orderBy?: [TypedColumns<T, "string" | "number">, "desc" | "asc"][];
 }
 
-export async function selectSingle<DB extends AnyPgDb, T extends AnyPgTable>(
+export function reflexDb<DB extends AnyPgDb>(db: DB) {
+  return {
+    async selectSingle<T extends AnyPgTable>(
+      tbl: T,
+      conditions: Condition<T>[]
+    ) {
+      return await selectSingle(db, tbl, conditions);
+    },
+    async selectSingleOptional<T extends AnyPgTable>(
+      tbl: T,
+      conditions: Condition<T>[]
+    ) {
+      return await selectSingleOptional(db, tbl, conditions);
+    },
+    async select<SF extends SelectedFields, T extends AnyPgTable>(
+      tbl: T,
+      conditions: Condition<T>[],
+      config: SelectConfig<T> = {}
+    ) {
+      return await select(db, tbl, conditions, config);
+    },
+    async selectColumns<SF extends SelectedFields, T extends AnyPgTable>(
+      tbl: T,
+      select: SF,
+      conditions: Condition<T>[],
+      config: SelectConfig<T> = {}
+    ) {
+      return await selectColumns(db, tbl, select, conditions, config);
+    },
+  };
+}
+
+export type ReflexDB<DB extends AnyPgDb> = ReturnType<typeof reflexDb<DB>>;
+
+async function selectSingle<DB extends AnyPgDb, T extends AnyPgTable>(
   db: DB,
   tbl: T,
   conditions: Condition<T>[]
@@ -68,10 +102,11 @@ export async function selectSingle<DB extends AnyPgDb, T extends AnyPgTable>(
   return res[0];
 }
 
-export async function selectSingleOptional<
-  DB extends AnyPgDb,
-  T extends AnyPgTable
->(db: DB, tbl: T, conditions: Condition<T>[]) {
+async function selectSingleOptional<DB extends AnyPgDb, T extends AnyPgTable>(
+  db: DB,
+  tbl: T,
+  conditions: Condition<T>[]
+) {
   const res = await select<DB, T>(db, tbl, conditions, {
     limit: 2,
   });
@@ -81,7 +116,7 @@ export async function selectSingleOptional<
   return res.at(0);
 }
 
-export function select<DB extends AnyPgDb, T extends AnyPgTable>(
+function select<DB extends AnyPgDb, T extends AnyPgTable>(
   db: DB,
   tbl: T,
   conditions: Condition<T>[],
@@ -104,7 +139,7 @@ export function select<DB extends AnyPgDb, T extends AnyPgTable>(
   return orderBy;
 }
 
-export function selectColumns<
+function selectColumns<
   SF extends SelectedFields,
   DB extends AnyPgDb,
   T extends AnyPgTable
