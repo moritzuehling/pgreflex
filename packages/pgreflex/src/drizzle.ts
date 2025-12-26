@@ -34,7 +34,7 @@ type NullableColumns<T extends AnyPgTable> = {
 }[keyof T["$inferSelect"]] &
   keyof T;
 
-type Condition<T extends AnyPgTable> =
+export type Condition<T extends AnyPgTable> =
   | [
       TypedColumns<T, "string">,
       "==" | "!=" | "<" | ">" | "<=" | ">=" | "like",

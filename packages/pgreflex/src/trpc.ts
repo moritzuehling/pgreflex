@@ -6,7 +6,7 @@ import type {
   inferTrackedOutput,
   UnsetMarker,
 } from "@trpc/server/unstable-core-do-not-import";
-import type { AnyPgDb } from "./drizzle";
+import type { AnyPgDb, ReflexDB } from "./drizzle";
 
 type DefaultValue<TValue, TFallback> = TValue extends UnsetMarker
   ? TFallback
@@ -17,7 +17,7 @@ type ArgumentTypes<F extends Function> = F extends (...args: infer A) => unknown
   ? A
   : never;
 
-export function reflexTrpc<DB extends AnyPgDb>(db: DB) {
+export function reflexTrpc<DB extends AnyPgDb>(db: ReflexDB<DB>) {
   return function reflex<
     TContext,
     TMeta,
@@ -38,7 +38,7 @@ export function reflexTrpc<DB extends AnyPgDb>(db: DB) {
     >,
     fn: (
       opts: ArgumentTypes<ArgumentTypes<typeof proc.subscription>[0]>[0] & {
-        db: DB;
+        db: ReflexDB<DB>;
       }
     ) => TSubOuput
   ): TRPCSubscriptionProcedure<{
