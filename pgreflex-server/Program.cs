@@ -24,4 +24,15 @@ app.MapGet("/status", () => "ok");
 app.MapFallback(() => "not found");
 
 app.UseWebSockets();
-app.Run();
+app.Start();
+
+Console.WriteLine($"Listening on {string.Join(" ", app.Urls)}");
+Console.WriteLine("--> Announcing Presence");
+await listener.AnnouncePresence(app.Urls.ToArray());
+
+Console.ForegroundColor = ConsoleColor.Green;
+Console.WriteLine("    Done, waiting for connections!");
+
+Console.ResetColor();
+
+app.WaitForShutdown();
