@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using Microsoft.Extensions.Options;
 using Npgsql;
 using Npgsql.Replication;
@@ -64,7 +65,7 @@ class PgListener
     return new PgListener()
     {
       ReplicationSlot = slot,
-      Secret = Guid.NewGuid().ToString(),
+      Secret = RandomNumberGenerator.GetHexString(64, true),
       Config = config,
     };
   }
@@ -79,12 +80,12 @@ class PgListener
       await query.ExecuteNonQueryAsync();
 
       query.CommandText = """
-        CREATE TABLE IF NOT EXISTS pgreflex.servers (
+        CREATE UNLOGGED TABLE IF NOT EXISTS pgreflex.servers (
             slot_name TEXT PRIMARY KEY,
             uri TEXT[] NOT NULL,
             server_hostname TEXT NOT NULL,
             created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            shared_secret TEXT NOT NULL
+            shared_secret text NOT NULL
         );
       """;
       await query.ExecuteNonQueryAsync();
@@ -109,8 +110,11 @@ class PgListener
       query.CommandText = "INSERT INTO pgreflex.servers (slot_name, uri, server_hostname, shared_secret) VALUES (@sn, @cu, @host, @sec)";
       query.Parameters.Add(new NpgsqlParameter<string>("sn", ReplicationSlot.Name));
       query.Parameters.Add(new NpgsqlParameter<string[]>("cu", urls));
-      query.Parameters.Add(new NpgsqlParameter<string>("sec", this.Secret));
       query.Parameters.Add(new NpgsqlParameter<string>("host", Environment.MachineName));
+
+
+      var keyParam = new NpgsqlParameter<string>("sec", this.Secret);
+      query.Parameters.Add(keyParam);
 
       await query.ExecuteNonQueryAsync();
     }

@@ -18,6 +18,7 @@
   "types": "./dist/index.d.mts",
   "exports": {
     ".": "./dist/index.mjs",
+    "./connection": "./dist/connection.mjs",
     "./trpc": "./dist/trpc.mjs",
     "./package.json": "./package.json"
   },
@@ -37,7 +38,7 @@
   },
   "peerDependencies": {
     "@trpc/server": "^11.0.0",
-    "drizzle-orm": "^0.45.0"
+    "drizzle-orm": "^0.45.1"
   },
   "dependencies": {}
 }

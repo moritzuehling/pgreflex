@@ -23,7 +23,11 @@ app.MapGet("/", () => "reflexgres server working");
 app.MapGet("/status", () => "ok");
 app.MapFallback(() => "not found");
 
+
+
 app.UseWebSockets();
+WebSocketHandler.UseWebSockets(app, listener);
+
 app.Start();
 
 Console.WriteLine($"Listening on {string.Join(" ", app.Urls)}");

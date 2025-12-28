@@ -1,5 +1,7 @@
 import { createBunHttpHandler } from "trpc-bun-adapter";
 import { appRouter } from "./router";
+import { relfexConnection } from "pgreflex/connection";
+import { db } from "./drizzle";
 
 const createContext = () => ({
   user: 1,
@@ -27,3 +29,4 @@ Bun.serve({
     );
   },
 });
+console.log(await relfexConnection(db));
