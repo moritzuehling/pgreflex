@@ -18,8 +18,6 @@
   "types": "./dist/index.d.mts",
   "exports": {
     ".": "./dist/index.mjs",
-    "./connection": "./dist/connection.mjs",
-    "./trpc": "./dist/trpc.mjs",
     "./package.json": "./package.json"
   },
   "scripts": {

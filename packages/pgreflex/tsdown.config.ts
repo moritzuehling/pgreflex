@@ -2,6 +2,6 @@ import { defineConfig } from "tsdown";
 
 export default defineConfig({
   exports: true,
-  entry: ["src/index.ts", "src/trpc.ts", "src/connection.ts"],
+  entry: ["src/index.ts"],
   // ...config options
 });

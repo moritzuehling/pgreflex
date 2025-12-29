@@ -1,0 +1,5 @@
+{
+  "name": "pgreflex-monorepo",
+  "private": true,
+  "workspaces": ["packages/*"]
+}
