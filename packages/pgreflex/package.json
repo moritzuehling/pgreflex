@@ -30,14 +30,14 @@
     "prepublishOnly": "pnpm run build"
   },
   "devDependencies": {
-    "@types/node": "^24.10.1",
+    "@types/node": "^24.10.4",
     "bumpp": "^10.3.1",
-    "tsdown": "^0.16.8",
+    "tsdown": "^0.18.3",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.9"
+    "vitest": "^4.0.16"
   },
   "peerDependencies": {
-    "@trpc/server": "^11.0.0",
+    "@trpc/server": "^11.8.1",
     "drizzle-orm": "^0.45.1"
   },
   "dependencies": {}
