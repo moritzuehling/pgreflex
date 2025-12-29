@@ -5,9 +5,7 @@ import { useSubscription } from "@trpc/tanstack-react-query";
 export function TestPage() {
   const pong = useQuery(trpc.ping.queryOptions());
   const subscription = useSubscription(
-    trpc.testSubscription.subscriptionOptions({
-      hello: "laaaaal",
-    })
+    trpc.testSubscription.subscriptionOptions()
   );
 
   return (
@@ -16,7 +14,8 @@ export function TestPage() {
       <br />
       {pong.data ?? "Loading!"}
       <br />
-      {subscription.data}
+      Data:{" "}
+      {subscription.data ? JSON.stringify(subscription.data) : "no data yet :("}
     </div>
   );
 }

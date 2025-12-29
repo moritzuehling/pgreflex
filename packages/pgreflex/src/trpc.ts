@@ -6,7 +6,8 @@ import type {
   inferTrackedOutput,
   UnsetMarker,
 } from "@trpc/server/unstable-core-do-not-import";
-import type { AnyPgDb, ReflexDB } from "./drizzle";
+import { reflexDb, type AnyPgDb, type ReflexDB } from "./drizzle";
+import { reflexConnection } from "./connection";
 
 type DefaultValue<TValue, TFallback> = TValue extends UnsetMarker
   ? TFallback
@@ -17,7 +18,9 @@ type ArgumentTypes<F extends Function> = F extends (...args: infer A) => unknown
   ? A
   : never;
 
-export function reflexTrpc<DB extends AnyPgDb>(db: ReflexDB<DB>) {
+export function reflexTrpc<DB extends AnyPgDb>(db: AnyPgDb) {
+  const connectionPromise = reflexConnection(db);
+
   return function reflex<
     TContext,
     TMeta,
@@ -47,14 +50,17 @@ export function reflexTrpc<DB extends AnyPgDb>(db: ReflexDB<DB>) {
     meta: TMeta;
   }> {
     return proc.subscription(async function* manageSubscription(opts) {
-      const newOpts = {
-        ...opts,
-        db,
-      };
+      const connection = await connectionPromise;
 
       while (!opts.signal?.aborted) {
+        const group = await connection.createGroup();
+
+        const newOpts = {
+          ...opts,
+          db: reflexDb(db, group.subscribeTo),
+        };
         yield await fn(newOpts);
-        await new Promise((res) => setTimeout(res, 1000));
+        await group.invalidated;
       }
 
       console.log("ending subscription");

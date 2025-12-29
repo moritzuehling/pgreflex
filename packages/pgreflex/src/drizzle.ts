@@ -13,13 +13,15 @@ import {
   asc,
   desc,
 } from "drizzle-orm";
-import type {
-  AnyPgTable,
-  PgColumn,
-  PgDatabase,
-  PgQueryResultHKT,
-  SelectedFields,
+import {
+  getTableConfig,
+  type AnyPgTable,
+  type PgColumn,
+  type PgDatabase,
+  type PgQueryResultHKT,
+  type SelectedFields,
 } from "drizzle-orm/pg-core";
+import type { ReflexSubscribeTo } from "./connection";
 
 export type AnyPgDb = PgDatabase<PgQueryResultHKT>;
 
@@ -50,18 +52,44 @@ interface SelectConfig<T extends AnyPgTable> {
   orderBy?: [TypedColumns<T, "string" | "number">, "desc" | "asc"][];
 }
 
-export function reflexDb<DB extends AnyPgDb>(db: DB) {
+export function reflexDb<DB extends AnyPgDb>(
+  db: DB,
+  subscribeTo?: ReflexSubscribeTo
+) {
   return {
     async selectSingle<T extends AnyPgTable>(
       tbl: T,
       conditions: Condition<T>[]
     ) {
+      await subscribeTo?.({
+        table: {
+          schema: getTableConfig(tbl).schema,
+          name: getTableConfig(tbl).name,
+        },
+        conditions: conditions.map(([col, op, val]) => [
+          col as string,
+          op,
+          val,
+        ]),
+      });
+
       return await selectSingle(db, tbl, conditions);
     },
     async selectSingleOptional<T extends AnyPgTable>(
       tbl: T,
       conditions: Condition<T>[]
     ) {
+      await subscribeTo?.({
+        table: {
+          schema: getTableConfig(tbl).schema,
+          name: getTableConfig(tbl).name,
+        },
+        conditions: conditions.map(([col, op, val]) => [
+          col as string,
+          op,
+          val,
+        ]),
+      });
       return await selectSingleOptional(db, tbl, conditions);
     },
     async select<SF extends SelectedFields, T extends AnyPgTable>(
@@ -69,6 +97,17 @@ export function reflexDb<DB extends AnyPgDb>(db: DB) {
       conditions: Condition<T>[],
       config: SelectConfig<T> = {}
     ) {
+      await subscribeTo?.({
+        table: {
+          schema: getTableConfig(tbl).schema,
+          name: getTableConfig(tbl).name,
+        },
+        conditions: conditions.map(([col, op, val]) => [
+          col as string,
+          op,
+          val,
+        ]),
+      });
       return await select(db, tbl, conditions, config);
     },
     async selectColumns<SF extends SelectedFields, T extends AnyPgTable>(
@@ -77,6 +116,17 @@ export function reflexDb<DB extends AnyPgDb>(db: DB) {
       conditions: Condition<T>[],
       config: SelectConfig<T> = {}
     ) {
+      await subscribeTo?.({
+        table: {
+          schema: getTableConfig(tbl).schema,
+          name: getTableConfig(tbl).name,
+        },
+        conditions: conditions.map(([col, op, val]) => [
+          col as string,
+          op,
+          val,
+        ]),
+      });
       return await selectColumns(db, tbl, select, conditions, config);
     },
   };

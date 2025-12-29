@@ -17,6 +17,7 @@
     "@trpc/tanstack-react-query": "^11.8.1",
     "@types/bun": "latest",
     "dotenv": "^17.2.3",
+    "drizzle-kit": "^0.31.8",
     "drizzle-orm": "^0.45.1",
     "pg": "^8.16.3",
     "pgreflex": "workspace:*",

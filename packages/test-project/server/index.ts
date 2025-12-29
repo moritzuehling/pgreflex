@@ -1,7 +1,5 @@
 import { createBunHttpHandler } from "trpc-bun-adapter";
 import { appRouter } from "./router";
-import { db } from "./drizzle";
-import { reflexConnection } from "pgreflex";
 
 const createContext = () => ({
   user: 1,
@@ -29,4 +27,3 @@ Bun.serve({
     );
   },
 });
-console.log(await reflexConnection(db));

@@ -21,12 +21,7 @@ class WebSocketHandler
           var connectTimeout = CancellationTokenSource.CreateLinkedTokenSource(context.RequestAborted, new CancellationTokenSource(10000).Token);
           var data = await webSocket.ReceiveMessageAssync(connectTimeout.Token, listener.Secret.Length + 10);
           Console.WriteLine($"[{connectionId}] requested authentication with secret ${data.Substring(0, 8)}... (${data.Length})");
-          if (StringUtil.ConstantTimeCompare(data, listener.Secret))
-          {
-            Console.WriteLine($"[{connectionId}] Authentication Successful!");
-            await webSocket.SendStringAsync("authenticated");
-          }
-          else
+          if (!StringUtil.ConstantTimeCompare(data, listener.Secret))
           {
             Console.WriteLine($"[{connectionId}] Authentication unsucessful!");
             await webSocket.SendStringAsync("wrong secret!");
@@ -34,6 +29,14 @@ class WebSocketHandler
             return;
           }
 
+          Console.WriteLine($"[{connectionId}] Authentication Successful!");
+          await webSocket.SendStringAsync("authenticated");
+
+          while (true)
+          {
+            var message = await webSocket.ReceiveMessageAssync(context.RequestAborted);
+            Console.WriteLine("Got message: " + message);
+          }
         }
         else
         {
