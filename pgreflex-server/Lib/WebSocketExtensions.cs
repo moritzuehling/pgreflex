@@ -3,13 +3,16 @@ using System.Text;
 
 public static class WebSocketsExtensions
 {
-  public static async Task<string> ReceiveMessageAssync(this WebSocket socket, CancellationToken token)
+  public static async Task<string> ReceiveMessageAssync(this WebSocket socket, CancellationToken token, int maxLength = 1024 * 1024)
   {
     MemoryStream ms = new MemoryStream();
     var underlying = new byte[8192];
 
     while (true)
     {
+      if (ms.Position > maxLength)
+        throw new Exception("Message too long");
+
       var buffer = new ArraySegment<byte>(underlying);
       var result = await socket.ReceiveAsync(buffer, token);
 
