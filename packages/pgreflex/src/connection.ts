@@ -1,7 +1,7 @@
 import { active_servers } from "./pgreflex-schema";
 import type { AnyPgDb } from "./drizzle";
 
-export async function reflexConnection(db: unknown) {
+export async function reflexConnection(db: AnyPgDb) {
   const servers = await (db as AnyPgDb).select().from(active_servers);
 
   if (servers.length === 0) {
