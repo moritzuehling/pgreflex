@@ -10,7 +10,7 @@ if (config.ConnectionString == null)
   return;
 }
 
-Console.WriteLine("Confgi" + config.ConnectionString);
+Console.WriteLine("Config" + config.ConnectionString);
 var listener = await PgListener.Initialize(config);
 
 // TODO: Add middleware that implements HTTP `beaerer` auth with secret key
