@@ -1,6 +1,6 @@
 using System.Net;
 
-namespace Pgreflex.Server;
+namespace Pgreflex;
 
 public static class AppConfig
 {

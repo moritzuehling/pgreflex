@@ -1,7 +1,7 @@
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 
-namespace Pgreflex.Server;
+namespace Pgreflex;
 
 public static class CertificateFactory
 {
@@ -29,7 +29,7 @@ public static class CertificateFactory
 
     req.CertificateExtensions.Add(
         new X509EnhancedKeyUsageExtension(
-            new OidCollection { new("1.3.6.1.5.5.7.3.1") }, // ServerAuth
+            [new("1.3.6.1.5.5.7.3.1")], // ServerAuth
             true
         )
     );

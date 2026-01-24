@@ -1,20 +1,19 @@
 // connect.ts (Node 22+ / Bun)
-// TLS TCP client with SPKI pin check (base64 sha256 of SubjectPublicKeyInfo).
-//
-// Usage example at bottom.
+// TLS TCP client with SPKI pin check + Protobuf framing.
 
 import tls from "node:tls";
 import crypto from "node:crypto";
 import type { ConnectInfo } from "./auth";
+import { ClientToServer, ServerToClient } from "../generated/protocol";
 
 export type EventType = "open" | "message" | "error" | "close";
 
-export type MessageEvent = { data: string };
+export type MessageEvent = { data: ServerToClient };
 
 export type ConnectResult = {
   addEventListener: (type: EventType, fn: (ev?: any) => void) => void;
   removeEventListener: (type: EventType, fn: (ev?: any) => void) => void;
-  send: (text: string) => void;
+  send: (msg: Omit<ClientToServer, 'messageId'>) => void;
   close: () => void;
 };
 
@@ -69,29 +68,46 @@ export function connect({ cert, server }: ConnectInfo): ConnectResult {
     },
   });
 
-  // Newline-delimited UTF-8 messages for now (matches your C# StreamReader loop idea).
-  let buf = "";
+  // Framing buffer
+  let buf = Buffer.alloc(0);
 
   socket.on("secureConnect", () => emit("open"));
   socket.on("close", () => emit("close"));
   socket.on("error", (err) => emit("error", err));
-  socket.on("data", (data: Buffer) => {
-    buf += data.toString("utf8");
+
+  socket.on("data", (chunk: Buffer) => {
+    buf = Buffer.concat([buf, chunk]);
+
     while (true) {
-      const idx = buf.indexOf("\n");
-      if (idx < 0) break;
-      const line = buf.slice(0, idx);
-      buf = buf.slice(idx + 1);
-      emit("message", { data: line } satisfies MessageEvent);
+      if (buf.length < 4) break; // Need at least length prefix
+
+      const length = buf.readInt32BE(0);
+      if (buf.length < 4 + length) break; // Wait for full message
+
+      const msgBytes = buf.subarray(4, 4 + length);
+      buf = buf.subarray(4 + length); // Consume
+
+      try {
+        const msg = ServerToClient.decode(msgBytes);
+        emit("message", { data: msg } satisfies MessageEvent);
+      } catch (e) {
+        console.error("Failed to decode message", e);
+        socket.destroy();
+      }
     }
   });
 
+  let messageId = 0;
   return {
     addEventListener,
     removeEventListener,
-    send: (text: string) => {
-      socket.write(text + "\n", "utf8");
+    send: (msg) => {
+      const bytes = ClientToServer.encode({ ...msg, messageId: messageId++ }).finish();
+      const lenParams = Buffer.alloc(4);
+      lenParams.writeInt32BE(bytes.length, 0);
+      socket.write(lenParams);
+      socket.write(bytes);
     },
     close: () => socket.end(),
-  };
+  } satisfies ConnectResult;
 }

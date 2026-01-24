@@ -10,7 +10,18 @@ const c = connect(ci);
 
 c.addEventListener("open", () => {
   console.log("connected (TLS + pin OK)");
-  c.send("hello from node/bun");
+
+  c.send({
+    addSubscriptionToGroup: {
+      groupId: "test-group",
+      subscriptionId: "sub-1",
+      conditions: {
+        schema: "public",
+        table: "users",
+        conditions: []
+      }
+    }
+  });
 });
 
 c.addEventListener("message", (e) => {

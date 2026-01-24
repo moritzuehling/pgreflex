@@ -9,9 +9,14 @@
 
   <ItemGroup>
     <PackageReference Include="DotNetEnv" Version="3.1.1" />
+    <PackageReference Include="Google.Protobuf" Version="3.33.4" />
+    <PackageReference Include="Grpc.Tools" Version="2.76.0">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
     <PackageReference Include="Npgsql" Version="10.0.1" />
     <EmbeddedResource Include="sql\*.sql" />
-
+    <Protobuf Include="..\protocol.proto" GrpcServices="None" />
   </ItemGroup>
 
 </Project>

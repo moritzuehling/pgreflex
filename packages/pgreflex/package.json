@@ -28,11 +28,13 @@
     "dev": "tsdown --watch",
     "test": "vitest",
     "typecheck": "tsc --noEmit",
+    "generate": "mkdir -p src/generated && protoc --plugin=./node_modules/.bin/protoc-gen-ts_proto --ts_proto_out=./src/generated --proto_path=../.. ../../protocol.proto",
     "prepublishOnly": "pnpm run build"
   },
   "devDependencies": {
     "@types/node": "^24.10.9",
     "bumpp": "^10.4.0",
+    "ts-proto": "^2.11.1",
     "tsdown": "^0.18.4",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18"
