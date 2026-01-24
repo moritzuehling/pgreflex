@@ -1,0 +1,77 @@
+syntax = "proto3";
+option csharp_namespace = "Pgreflex.Protocol";
+
+message ClientToServer {
+  int32 message_id = 1;
+
+  oneof contents {
+    AddSubscriptionToGroup add_subscription_to_group = 51;
+  }
+}
+
+message ServerToClient {
+  int32 message_id = 1;
+  int32 in_reply_to = 3;
+
+  oneof contents {
+    SubscriptionAcknowledged subscription_acknowledged = 50;
+    InvalidateGroup invalidate_group = 51;
+    Error error = 52;
+  }
+}
+
+message AddSubscriptionToGroup {
+  string group_id = 1;
+  string subscription_id = 2;
+  ConditionSet conditions = 3;
+}
+
+message SubscriptionAcknowledged {
+  string group_id = 1;
+  string subscription_id = 2;
+  bool watching = 3;
+}
+
+message InvalidateGroup {
+  string group_id = 1;
+}
+
+message ConditionSet {
+  string schema = 1;
+  string table = 2;
+  repeated Condition conditions = 3;
+}
+
+message Condition {
+  string column = 1;
+  Operand operand = 2;
+
+  oneof value {
+    bool is_null = 50;
+    
+    string str = 51;
+    double num = 52;
+    bool b = 53;
+    
+    // Postgres precision is 1 microsecond. 
+    // We use micros to preserve full fidelity vs JS defaults.
+    int64 timestamp_micros = 54; 
+  }
+}
+
+enum Operand {
+  EQ = 0;
+  NEQ = 1;
+  LT = 2;
+  LTE = 3;
+  GT = 4;
+  GTE = 5;
+  LIKE = 6;
+  ILIKE = 7;
+}
+
+message Error {
+  string code = 1;
+  string message = 2;
+  bool fatal = 3;
+}
