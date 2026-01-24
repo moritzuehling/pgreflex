@@ -1,4 +1,4 @@
-import { active_servers } from "./pgreflex-schema";
+import { active_servers } from "./pgreflexSchema";
 import type { AnyPgDb } from "./drizzle";
 import { getRandomString } from "./getRandomString";
 import type {
@@ -21,9 +21,10 @@ export async function reflexConnection(db: AnyPgDb) {
 
   const randomServer = servers[(servers.length * Math.random()) | 0];
 
+  // todo: switch to our socket implementation
   const socket = await new Promise<WebSocket>((resolve, reject) => {
     const socket = new WebSocket(
-      (randomServer.uri[0] + "/ws").replace("//", "/")
+      (randomServer.uri[0] + "/ws").replace("//", "/"),
     );
     socket.onerror = reject;
     socket.onopen = () => {
@@ -87,7 +88,7 @@ export async function reflexConnection(db: AnyPgDb) {
           requestId,
           groupId,
           conditionSet,
-        } satisfies ClientToServerMessage)
+        } satisfies ClientToServerMessage),
       );
 
       return promise;

@@ -85,7 +85,8 @@ class PgListener
             uri TEXT[] NOT NULL,
             server_hostname TEXT NOT NULL,
             created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            shared_secret text NOT NULL
+            shared_secret text NOT NULL,
+            server_certificate bytea NOT NULL,
         );
       """;
       await query.ExecuteNonQueryAsync();
@@ -107,7 +108,7 @@ class PgListener
       """;
       await query.ExecuteNonQueryAsync();
 
-      query.CommandText = "INSERT INTO pgreflex.servers (slot_name, uri, server_hostname, shared_secret) VALUES (@sn, @cu, @host, @sec)";
+      query.CommandText = "INSERT INTO pgreflex.servers (slot_name, uri, server_hostname, shared_secret, server_certificate) VALUES (@sn, @cu, @host, @sec, @cert)";
       query.Parameters.Add(new NpgsqlParameter<string>("sn", ReplicationSlot.Name));
       query.Parameters.Add(new NpgsqlParameter<string[]>("cu", urls));
       query.Parameters.Add(new NpgsqlParameter<string>("host", Environment.MachineName));
