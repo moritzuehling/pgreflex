@@ -11,6 +11,8 @@ public static class AppConfig
   public static bool InitializeSchema => GetEnvBool("PGREFLEX_INIT_SCHEMA", true);
   public static bool ResetSchema => GetEnvBool("PGREFLEX_RESET_SCHEMA", false);
 
+  public static string DatabaseConnectionString = GetEnv("PGREFLEX_CONNECTION_STRING", "Host=127.0.0.1;Username=postgres;Password=postgres;Database=reflexgres");
+
   public static IPEndPoint ListenEndPoint
   {
     get

@@ -19,7 +19,7 @@ public static class Program
     Console.WriteLine($"pgreflex starting...");
 
 
-    var source = NpgsqlDataSource.Create("Host=127.0.0.1;Username=postgres;Password=postgres;Database=reflexgres");
+    var source = NpgsqlDataSource.Create(AppConfig.DatabaseConnectionString);
 
     var dbManager = new DatabaseManager { DataSource = source };
     if (AppConfig.InitializeSchema)
@@ -114,10 +114,10 @@ public static class Program
       // Helper to send messages
       async Task SendReply(Pgreflex.Protocol.ServerToClient msg)
       {
-          var bytes = msg.ToByteArray();
-          var lenBytes = BitConverter.GetBytes(IPAddress.HostToNetworkOrder(bytes.Length));
-          await sslStream.WriteAsync(lenBytes);
-          await sslStream.WriteAsync(bytes);
+        var bytes = msg.ToByteArray();
+        var lenBytes = BitConverter.GetBytes(IPAddress.HostToNetworkOrder(bytes.Length));
+        await sslStream.WriteAsync(lenBytes);
+        await sslStream.WriteAsync(bytes);
       }
 
       while (true)
@@ -126,27 +126,27 @@ public static class Program
         int read = 0;
         while (read < 4)
         {
-            int n = await sslStream.ReadAsync(headerBuffer.AsMemory(read, 4 - read));
-            if (n == 0) return; // Disconnected
-            read += n;
+          int n = await sslStream.ReadAsync(headerBuffer.AsMemory(read, 4 - read));
+          if (n == 0) return; // Disconnected
+          read += n;
         }
 
         int length = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(headerBuffer, 0));
-        
+
         // Sanity check length
-        if (length < 0 || length > 10 * 1024 * 1024) 
+        if (length < 0 || length > 10 * 1024 * 1024)
         {
-             Console.WriteLine($"[conn] invalid message length {length} remote={remote}");
-             break;
+          Console.WriteLine($"[conn] invalid message length {length} remote={remote}");
+          break;
         }
 
         var payload = new byte[length];
         read = 0;
         while (read < length)
         {
-            int n = await sslStream.ReadAsync(payload.AsMemory(read, length - read));
-            if (n == 0) return;
-            read += n;
+          int n = await sslStream.ReadAsync(payload.AsMemory(read, length - read));
+          if (n == 0) return;
+          read += n;
         }
 
         var msg = Pgreflex.Protocol.ClientToServer.Parser.ParseFrom(payload);
