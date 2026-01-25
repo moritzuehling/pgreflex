@@ -6,7 +6,7 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using Npgsql;
-using Google.Protobuf; // For ToByteArray() extension
+using Google.Protobuf;
 
 namespace Pgreflex;
 
@@ -14,10 +14,10 @@ public static class Program
 {
   public static async Task Main()
   {
+    var sw = System.Diagnostics.Stopwatch.StartNew();
     DotNetEnv.Env.TraversePath().Load();
 
     Console.WriteLine($"pgreflex starting...");
-
 
     var source = NpgsqlDataSource.Create(AppConfig.DatabaseConnectionString);
 
@@ -49,9 +49,10 @@ public static class Program
     var listener = new TcpListener(AppConfig.ListenEndPoint);
     listener.Start(backlog: 512);
 
-    await dbManager.AnnouncePresence("fake slot", AppConfig.ListenHost, AppConfig.ListenPort, pinB64);
+    await dbManager.AnnouncePresence(Guid.NewGuid().ToString(), AppConfig.ListenHost, AppConfig.ListenPort, pinB64);
 
     Console.WriteLine("[server] ready. Waiting for connections...");
+    Console.WriteLine($"[server] Startup took {sw.Elapsed.TotalSeconds:0.00}s");
 
     while (true)
     {
