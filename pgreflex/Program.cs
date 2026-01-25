@@ -48,6 +48,16 @@ public static class Program
     var walListener = await WalListener.Create(dbManager);
     _ = Task.Run(async () => await walListener.Listen(CancellationToken.None));
 
+    _ = Task.Run(async () =>
+    {
+      while (true)
+      {
+        var ce = await walListener.ChangeEvents.ReadAsync();
+        Console.WriteLine($"change event: {ce.Schema}.{ce.Table}:\n  {string.Join("\n  ", ce.ChangedColumns.Select(a =>
+        $"({a.ColumnType.Name}/{a.ValType.Name}) {a.ColumnName}: {a.Value} (${a.Value.GetType()?.Name ?? "null"})"))}");
+      }
+    });
+
     var listener = new TcpListener(AppConfig.ListenEndPoint);
     listener.Start(backlog: 512);
 
