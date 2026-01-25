@@ -41,17 +41,24 @@ while (true) {
     money_left,
     num_friends,
   } = generateUser();
-  await sql`UPDATE USERS SET
-    id=${new_id},
-    name=${name},
-    birthday=${birthday},
-    email=${email},
-    address=${address},
-    money_left=${money_left},
-    num_friends=${num_friends}
-  WHERE
-    id=${id}
-  `;
+  try {
+    await sql.transaction(async (tx) => {
+      await tx`UPDATE USERS SET
+      id=${new_id},
+      name=${name},
+      birthday=${birthday},
+      email=${email},
+      address=${address},
+      money_left=${money_left},
+      num_friends=${num_friends}
+    WHERE
+      id=${id}
+    `;
 
-  await sleep(1000);
+      if (Math.random() < 0.05) {
+        throw new Error("cancelling transaction!");
+      }
+    });
+  } catch {}
+  await await sleep(1000);
 }

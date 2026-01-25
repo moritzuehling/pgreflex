@@ -1,8 +1,17 @@
 using System.Diagnostics;
 using Npgsql;
+using Npgsql.Replication;
+using Npgsql.Replication.PgOutput;
 
 public class DatabaseManager
 {
+  /// <summary>
+  /// Class 42 — Syntax Error or Access Rule Violation
+  /// 42710: duplicate_object
+  /// https://www.postgresql.org/docs/current/errcodes-appendix.html
+  /// </summary>
+  const string PgDuplicateObject = "42710";
+
   public required NpgsqlDataSource DataSource;
 
   public async Task ResetSchema()
@@ -47,6 +56,22 @@ public class DatabaseManager
     File.WriteAllText("/tmp/pgreflex-server-spki-sha256.b64", certificateHash);
   }
 
+  private async Task CreatePublication()
+  {
+    try
+    {
+      using var cmd = DataSource.CreateCommand();
+      cmd.CommandText = $"CREATE PUBLICATION \"pgreflex\" FOR ALL TABLES";
+      await cmd.ExecuteNonQueryAsync();
+
+      Console.WriteLine(" -> Publication was successfully created!");
+    }
+    catch (PostgresException exc) when (exc.SqlState == PgDuplicateObject)
+    {
+      Console.WriteLine(" -> Not creating publication, already exists");
+    }
+  }
+
 
   private string LoadSqlScript(string name)
   {
@@ -62,4 +87,5 @@ public class DatabaseManager
     using var reader = new StreamReader(stream);
     return reader.ReadToEnd();
   }
+
 }
