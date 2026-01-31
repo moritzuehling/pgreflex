@@ -52,7 +52,7 @@ class WalListener
     // So, we can simplify: we push the old and new row seperately into the queue - which makes the check later trivial
     await foreach (var message in enumerable)
     {
-      if (message is (InsertMessage insert))
+      if (message is InsertMessage insert)
       {
         await w.WriteAsync(new ChangeEvent
         {
@@ -61,7 +61,7 @@ class WalListener
           ChangedColumns = await FromReplicationTuple(insert.NewRow),
         });
       }
-      else if (message is (FullUpdateMessage update))
+      else if (message is FullUpdateMessage update)
       {
         await w.WriteAsync(new ChangeEvent
         {
