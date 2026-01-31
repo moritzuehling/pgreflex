@@ -12,6 +12,6 @@ record ChangedColumn
 {
   public required string ColumnName { get; set; }
   public required PostgresType ColumnType { get; set; }
-  public object Value { get; set; }
+  public object? Value { get; set; }
   public required Type ValType { get; set; }
 }
