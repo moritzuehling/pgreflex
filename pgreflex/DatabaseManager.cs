@@ -56,7 +56,7 @@ public class DatabaseManager
     File.WriteAllText("/tmp/pgreflex-server-spki-sha256.b64", certificateHash);
   }
 
-  private async Task CreatePublication()
+  public async Task CreatePublication()
   {
     try
     {

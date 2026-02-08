@@ -10,11 +10,11 @@
       "version": "0.0.1",
       "dependencies": {
         "@peculiar/x509": "^1.14.3",
+        "ts-proto": "^2.11.1",
       },
       "devDependencies": {
         "@types/node": "^24.10.9",
         "bumpp": "^10.4.0",
-        "ts-proto": "^2.11.1",
         "tsdown": "^0.18.4",
         "typescript": "^5.9.3",
         "vitest": "^4.0.18",

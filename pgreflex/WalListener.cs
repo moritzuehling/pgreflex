@@ -15,6 +15,8 @@ class WalListener
 
   public static async Task<WalListener> Create(DatabaseManager db)
   {
+    await db.CreatePublication();
+
     var rc = new LogicalReplicationConnection(db.DataSource.ConnectionString);
     await rc.Open();
 
@@ -76,6 +78,10 @@ class WalListener
           Schema = update.Relation.Namespace,
           ChangedColumns = await FromReplicationTuple(update.NewRow),
         });
+      }
+      else
+      {
+        Console.WriteLine($"Got an unhandled message: {message.GetType().Name}");
       }
     }
   }
