@@ -121,49 +121,12 @@ public static class Program
 
       Console.WriteLine($"[conn] tls established remote={remote} protocol={sslStream.SslProtocol} cipher={sslStream.NegotiatedCipherSuite}");
 
-      var handler = new ProtocolHandler();
-      var headerBuffer = new byte[4];
-
-      // Helper to send messages
-      async Task SendReply(Pgreflex.Protocol.ServerToClient msg)
-      {
-        var bytes = msg.ToByteArray();
-        var lenBytes = BitConverter.GetBytes(IPAddress.HostToNetworkOrder(bytes.Length));
-        await sslStream.WriteAsync(lenBytes);
-        await sslStream.WriteAsync(bytes);
-      }
+      Client protocolClient = new Client(sslStream);
 
       while (true)
       {
-        // Read 4 bytes length
-        int read = 0;
-        while (read < 4)
-        {
-          int n = await sslStream.ReadAsync(headerBuffer.AsMemory(read, 4 - read));
-          if (n == 0) return; // Disconnected
-          read += n;
-        }
-
-        int length = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(headerBuffer, 0));
-
-        // Sanity check length
-        if (length < 0 || length > 10 * 1024 * 1024)
-        {
-          Console.WriteLine($"[conn] invalid message length {length} remote={remote}");
-          break;
-        }
-
-        var payload = new byte[length];
-        read = 0;
-        while (read < length)
-        {
-          int n = await sslStream.ReadAsync(payload.AsMemory(read, length - read));
-          if (n == 0) return;
-          read += n;
-        }
-
-        var msg = Pgreflex.Protocol.ClientToServer.Parser.ParseFrom(payload);
-        await handler.HandleMessageAsync(msg, SendReply);
+        var next = await protocolClient.Messages.ReadAsync();
+        Console.WriteLine("read from client: " + next.Message.GetType());
       }
     }
     catch (OperationCanceledException)
