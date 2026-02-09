@@ -65,18 +65,28 @@ class WalListener
       }
       else if (message is FullUpdateMessage update)
       {
+        var oldTuple = await FromReplicationTuple(update.OldRow);
+        var newTuple = await FromReplicationTuple(update.NewRow);
+
+        if (ReplicationTuplesEqual(oldTuple, newTuple))
+        {
+          Console.WriteLine($"Skipping update to {update.Relation.RelationName}, old and new tuple equal");
+          continue;
+        }
+
+
         await w.WriteAsync(new ChangeEvent
         {
           Table = update.Relation.RelationName,
           Schema = update.Relation.Namespace,
-          ChangedColumns = await FromReplicationTuple(update.OldRow),
+          ChangedColumns = oldTuple
         });
 
         await w.WriteAsync(new ChangeEvent
         {
           Table = update.Relation.RelationName,
           Schema = update.Relation.Namespace,
-          ChangedColumns = await FromReplicationTuple(update.NewRow),
+          ChangedColumns = newTuple,
         });
       }
       else
@@ -91,15 +101,43 @@ class WalListener
     var res = new List<ChangedColumn>();
     await foreach (var col in tuple)
     {
-      res.Add(new ChangedColumn()
+      var cc = new ChangedColumn()
       {
         ColumnName = col.GetFieldName(),
         ColumnType = col.GetPostgresType(),
         ValType = col.GetFieldType(),
-        Value = await col.Get(),
-      });
+        Value = await col.Get<object>(),
+      };
+
+      res.Add(cc);
     }
 
     return res;
+  }
+
+  private bool ReplicationTuplesEqual(List<ChangedColumn> a, List<ChangedColumn> b)
+  {
+    for (var i = 0; i < a.Count; i++)
+    {
+      var av = a[i].Value;
+      var bv = b[i].Value;
+
+      var aNull = av == DBNull.Value || av == null;
+      var bNull = bv == DBNull.Value || bv == null;
+
+
+      // Both null, we continue
+      if (aNull && bNull)
+        continue;
+
+      // one of them is null, but the other isn't -> something changed
+      if (aNull || bNull)
+        return false;
+
+      if (!av!.Equals(bv!))
+        return false;
+    }
+
+    return true;
   }
 }

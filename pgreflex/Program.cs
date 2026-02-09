@@ -46,7 +46,14 @@ public static class Program
 
 
     var walListener = await WalListener.Create(dbManager);
-    _ = Task.Run(async () => await walListener.Listen(CancellationToken.None));
+    _ = Task.Run(async () =>
+    {
+      try { await walListener.Listen(CancellationToken.None); }
+      catch (Exception e)
+      {
+        Console.WriteLine(e);
+      }
+    });
 
     _ = Task.Run(async () =>
     {
