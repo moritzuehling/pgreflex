@@ -1,5 +1,6 @@
 using System.Net;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Threading.Channels;
 using Google.Protobuf;
 using Pgreflex.Protocol;
@@ -34,31 +35,43 @@ class Client
 
   public void Read()
   {
-    var cis = new CodedInputStream(Underlying, true);
-    while (true)
+    try
     {
-
-      var len = cis.ReadInt32();
-      Console.WriteLine("Got len: " + len);
-      var sub = CodedInputStream.CreateWithLimits(Underlying, len, 100);
-      var msg_int = ClientToServer.Parser.ParseFrom(sub);
-
-      Console.WriteLine("msg_int" + msg_int.MessageId);
-
-      var msg = new ClientMessage()
-      {
-        Client = this,
-        Message = msg_int
-      };
-
-      Console.WriteLine("Got message" + msg.Message.AddSubscriptionToGroup.GroupId);
-
-
+      byte[] lenBuf = new byte[4];
       while (true)
       {
-        MessageChannel.Writer.TryWrite(msg);
-        Thread.Yield();
+        Underlying.ReadExactly(lenBuf, 0, 4);
+        var len = BitConverter.ToInt32(lenBuf, 0);
+        Console.WriteLine("Got len: " + len);
+
+        byte[] rawMessage = new byte[len];
+        Underlying.ReadExactly(rawMessage, 0, len);
+
+        var message = ClientToServer.Parser.ParseFrom(rawMessage);
+
+        Console.WriteLine("msg_int: " + message.MessageId);
+
+        var msg = new ClientMessage()
+        {
+          Client = this,
+          Message = message
+        };
+
+        Console.WriteLine("Got message" + msg.Message.AddSubscriptionToGroup.GroupId);
+
+        while (true)
+        {
+          if (MessageChannel.Writer.TryWrite(msg))
+            break;
+
+          Thread.Yield();
+        }
       }
+    }
+    catch (EndOfStreamException)
+    {
+      Console.WriteLine("Client disconnected");
+      MessageChannel.Writer.Complete();
     }
   }
 }

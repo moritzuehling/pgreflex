@@ -1,5 +1,11 @@
 import { sql } from "drizzle-orm";
-import { integer, pgSchema, text, timestamp } from "drizzle-orm/pg-core";
+import {
+  integer,
+  pgSchema,
+  text,
+  timestamp,
+  boolean,
+} from "drizzle-orm/pg-core";
 
 const pgreflexSchema = pgSchema("pgreflex");
 
@@ -13,10 +19,12 @@ export const servers = pgreflexSchema.table("servers", {
 export const active_servers = pgreflexSchema
   .view("active_servers", {
     slot_name: text().notNull(),
-    uri: text().array().notNull(),
-    server_hostname: text().notNull(),
+    host: text().notNull(),
+    port: integer().notNull(),
     created_at: timestamp().notNull(),
-    shared_secret: text().notNull(),
+    certificate_hash: text().notNull(),
+    temporary: boolean().notNull(),
+    active: boolean().notNull(),
   })
   .existing();
 

@@ -5,7 +5,6 @@ import tls from "node:tls";
 import crypto from "node:crypto";
 import type { ConnectInfo } from "./auth";
 import { ClientToServer, ServerToClient } from "../generated/protocol";
-import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 
 export type EventType = "open" | "message" | "error" | "close";
 
@@ -83,10 +82,10 @@ export function connect({ cert, server }: ConnectInfo): ConnectResult {
       if (buf.length < 4) break; // Need at least length prefix
 
       const length = buf.readInt32BE(0);
-      if (buf.length < 4 + length) break; // Wait for full message
+      if (buf.length < 4 + length) break;
 
       const msgBytes = buf.subarray(4, 4 + length);
-      buf = buf.subarray(4 + length); // Consume
+      buf = buf.subarray(4 + length);
 
       try {
         const msg = ServerToClient.decode(msgBytes);
@@ -99,21 +98,19 @@ export function connect({ cert, server }: ConnectInfo): ConnectResult {
   });
 
   let messageId = 0;
+  const lenParams = Buffer.alloc(4);
   return {
     addEventListener,
     removeEventListener,
     send: (msg) => {
-      const w = new BinaryWriter();
-      var res = ClientToServer.encode({
+      var bytes = ClientToServer.encode({
         ...msg,
         messageId: messageId++,
       }).finish();
 
-      console.log("len", res.length);
-      w.int32(res.length);
-      w.raw(res);
-
-      socket.write(w.finish());
+      lenParams.writeInt32LE(bytes.length, 0);
+      socket.write(lenParams);
+      socket.write(bytes);
     },
     close: () => socket.end(),
   } satisfies ConnectResult;
