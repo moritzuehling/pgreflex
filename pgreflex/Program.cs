@@ -108,11 +108,11 @@ public static class Program
       );
 
       // TLS handshake
-      var options = new System.Net.Security.SslServerAuthenticationOptions
+      var options = new SslServerAuthenticationOptions
       {
         ServerCertificate = serverCert,
         EnabledSslProtocols = SslProtocols.Tls12 | SslProtocols.Tls13,
-        CertificateRevocationCheckMode = System.Security.Cryptography.X509Certificates.X509RevocationMode.NoCheck,
+        CertificateRevocationCheckMode = X509RevocationMode.NoCheck,
         ClientCertificateRequired = true,
       };
 
@@ -126,6 +126,23 @@ public static class Program
       while (true)
       {
         var next = await protocolClient.Messages.ReadAsync();
+
+        if (next.Message.AddSubscriptionToGroup != null)
+        {
+          var asg = next.Message.AddSubscriptionToGroup;
+
+
+          var table = asg.Conditions.Table;
+          var schema = asg.Conditions.Schema;
+
+          if (!dbManager.IsFullyReplicated(table, schema))
+          {
+            await dbManager.EnsureFullyReplicated(table, schema);
+          }
+
+          Console.WriteLine($"asg {schema}.{table}");
+        }
+
         Console.WriteLine("read from client: " + next.Message.GetType());
       }
     }

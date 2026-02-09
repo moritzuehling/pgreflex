@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using Npgsql;
 using Npgsql.Replication;
@@ -69,6 +70,29 @@ public class DatabaseManager
     catch (PostgresException exc) when (exc.SqlState == PgDuplicateObject)
     {
       Console.WriteLine(" -> Not creating publication, already exists");
+    }
+  }
+
+  ConcurrentBag<string> ReplicatedTables = new ConcurrentBag<string>();
+  public bool IsFullyReplicated(string table, string? schema)
+  {
+    var relName = schema != null ? $"\"{schema}\".\"{table}\"" : $"\"{table}\"";
+
+    // Todo: use this to figure stuff out.
+    // DataSource.CreateCommand("select relreplident from pg_class where oid=($1::regclass)");
+
+    return ReplicatedTables.Contains(schema);
+  }
+
+  public async Task EnsureFullyReplicated(string table, string? schema)
+  {
+    var relName = schema != null ? $"\"{schema}\".\"{table}\"" : $"\"{table}\"";
+    Console.WriteLine($"Ensuring {relName} has REPLICA IDENTITY FULL");
+
+
+    using (var cmd = DataSource.CreateCommand($"ALTER TABLE {relName} REPLICA IDENTITY FULL"))
+    {
+      await cmd.ExecuteNonQueryAsync();
     }
   }
 
