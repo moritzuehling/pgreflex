@@ -123,7 +123,7 @@ class SubscriptionManager
 
     foreach (var sub in subsToCheck)
     {
-      var isMatch = sub.Conditions.Conditions.All(cond => true);
+      var isMatch = sub.Conditions.Conditions.All(cond => Check(cond, ce));
       if (isMatch)
         res.Add(sub);
     }
@@ -141,9 +141,12 @@ class SubscriptionManager
       return false;
     }
 
+    Console.WriteLine("operand" + cond.Operand);
+
     switch (cond.Operand)
     {
       case Operand.Eq:
+
         if (cond.IsNull)
           return col.Value == null || col.Value == DBNull.Value;
 
@@ -151,7 +154,10 @@ class SubscriptionManager
           return false;
 
         if (cond.HasStr)
+        {
+          Console.WriteLine($"(string){cond.Str} == (string){col.Value}");
           return (string)cond.Str == (string)col.Value;
+        }
 
         if (cond.HasNum)
           return (double)cond.Num == (double)col.Value;
