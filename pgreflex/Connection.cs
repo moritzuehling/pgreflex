@@ -1,6 +1,7 @@
 
 using System.Threading.Channels;
 using Google.Protobuf;
+using Google.Protobuf.WellKnownTypes;
 using Pgreflex.Protocol;
 
 class Connection
@@ -26,7 +27,13 @@ class Connection
     Console.WriteLine("SendMessage!");
     lock (Underlying)
     {
-      msg.WriteDelimitedTo(Underlying);
+      var header = new byte[4];
+      var bytes = msg.ToByteArray();
+      BitConverter.TryWriteBytes(new Span<byte>(header, 0, 4), bytes.Length);
+
+      Underlying.Write(header, 0, 4);
+      Underlying.Write(bytes, 0, bytes.Length);
+
     }
   }
 

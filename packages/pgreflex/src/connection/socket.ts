@@ -76,12 +76,16 @@ export function connect({ cert, server }: ConnectInfo): ConnectResult {
   socket.on("error", (err) => emit("error", err));
 
   socket.on("data", (chunk: Buffer) => {
+    console.log("got bytes", chunk.byteLength);
     buf = Buffer.concat([buf, chunk]);
 
     while (true) {
       if (buf.length < 4) break; // Need at least length prefix
 
-      const length = buf.readInt32BE(0);
+      const length = buf.readInt32LE(0);
+
+      console.log("length", buf.slice(0, 4));
+
       if (buf.length < 4 + length) break;
 
       const msgBytes = buf.subarray(4, 4 + length);
@@ -90,6 +94,7 @@ export function connect({ cert, server }: ConnectInfo): ConnectResult {
       try {
         const msg = ServerToClient.decode(msgBytes);
         emit("message", { data: msg } satisfies MessageEvent);
+        console.log("message", msg);
       } catch (e) {
         console.error("Failed to decode message", e);
         socket.destroy();

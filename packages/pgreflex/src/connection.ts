@@ -14,6 +14,7 @@ export async function reflexConnection(db: AnyPgDb) {
   const socket = connect(connectInfo);
 
   socket.addEventListener("message", (ev) => {
+    console.log("message", ev);
     const data = JSON.parse(ev.data) as ServerToClientMessage;
     switch (data.messageType) {
       case "invalidate":
@@ -55,7 +56,7 @@ export async function reflexConnection(db: AnyPgDb) {
       subscribeTo: addSubscription,
 
       get isInvalidated() {
-        return invalidateGroupFn.has(groupId);
+        return !invalidateGroupFn.has(groupId);
       },
     };
   }
