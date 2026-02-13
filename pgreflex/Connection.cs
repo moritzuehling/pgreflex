@@ -1,25 +1,21 @@
-using System.Net;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
+
 using System.Threading.Channels;
 using Google.Protobuf;
 using Pgreflex.Protocol;
 
-class Client
+class Connection
 {
   Stream Underlying { get; set; }
 
-  Channel<ClientMessage> MessageChannel { get; set; }
-
-  public ChannelReader<ClientMessage> Messages { get { return MessageChannel.Reader; } }
+  SubscriptionManager Subscription { get; set; }
 
   Thread ReadThread;
 
 
-  public Client(Stream underlying)
+  public Connection(Stream underlying, SubscriptionManager sub)
   {
     Underlying = underlying;
-    MessageChannel = Channel.CreateUnbounded<ClientMessage>();
+    Subscription = sub;
 
     ReadThread = new Thread(Read);
     ReadThread.Start();
@@ -27,6 +23,7 @@ class Client
 
   public void SendMessage(ServerToClient msg)
   {
+    Console.WriteLine("SendMessage!");
     lock (Underlying)
     {
       msg.WriteDelimitedTo(Underlying);
@@ -57,21 +54,14 @@ class Client
           Message = message
         };
 
-        Console.WriteLine("Got message" + msg.Message.AddSubscriptionToGroup.GroupId);
+        Console.WriteLine("Got message " + msg.Message.AddSubscriptionToGroup.GroupId);
+        Subscription.HandleClientMessage(msg).AsTask().Wait(-1);
 
-        while (true)
-        {
-          if (MessageChannel.Writer.TryWrite(msg))
-            break;
-
-          Thread.Yield();
-        }
       }
     }
     catch (EndOfStreamException)
     {
       Console.WriteLine("Client disconnected");
-      MessageChannel.Writer.Complete();
     }
   }
 }
@@ -79,6 +69,6 @@ class Client
 
 record ClientMessage
 {
-  public required Client Client;
+  public required Connection Client;
   public required ClientToServer Message;
 }

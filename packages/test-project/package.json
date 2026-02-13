@@ -8,7 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "pgcli": "pgcli $DATABASE_URL",
+    "pgcli": "pgcli \"$DATABASE_URL\"",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

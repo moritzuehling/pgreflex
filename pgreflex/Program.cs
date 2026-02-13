@@ -32,6 +32,10 @@ public static class Program
       await dbManager.InitSchema();
     }
 
+    SubscriptionManager sub = new SubscriptionManager();
+    _ = Task.Run(() => sub.Listen(dbManager, CancellationToken.None));
+
+
     // Generate a self-signed cert for TLS (for now).
     // Later, you can store/pin the public key/cert via Postgres discovery.
     using var serverCert = CertificateFactory.CreateSelfSignedServerCert(
@@ -62,6 +66,8 @@ public static class Program
         var ce = await walListener.ChangeEvents.ReadAsync();
         Console.WriteLine($"change event: {ce.Schema}.{ce.Table}:\n  {string.Join("\n  ", ce.ChangedColumns.Select(a =>
         $"({a.ColumnType.Name}/{a.ValType.Name}) {a.ColumnName}: {a.Value} (${a.Value?.GetType()?.Name ?? "null"})"))}");
+
+        await sub.HandleWalUpdate(ce);
       }
     });
 
@@ -76,11 +82,11 @@ public static class Program
     while (true)
     {
       TcpClient tcpClient = await listener.AcceptTcpClientAsync();
-      _ = Task.Run(() => HandleClientAsync(tcpClient, serverCert, dbManager));
+      _ = Task.Run(() => HandleClientAsync(tcpClient, serverCert, dbManager, sub));
     }
   }
 
-  private static async Task HandleClientAsync(TcpClient tcpClient, X509Certificate2 serverCert, DatabaseManager dbManager)
+  private static async Task HandleClientAsync(TcpClient tcpClient, X509Certificate2 serverCert, DatabaseManager dbManager, SubscriptionManager sub)
   {
     var remote = tcpClient.Client.RemoteEndPoint;
     var local = tcpClient.Client.LocalEndPoint;
@@ -91,7 +97,7 @@ public static class Program
     {
       tcpClient.NoDelay = true;
 
-      await using var networkStream = tcpClient.GetStream();
+      var networkStream = tcpClient.GetStream();
 
       // Get all client certificates announced in the db in the last 30 seconds
       // (both insert/query rely on CURRENT_TIMESTAMP on db server)
@@ -128,30 +134,8 @@ public static class Program
 
       Console.WriteLine($"[conn] tls established remote={remote} protocol={sslStream.SslProtocol} cipher={sslStream.NegotiatedCipherSuite}");
 
-      Client protocolClient = new Client(sslStream);
-
-      while (true)
-      {
-        var next = await protocolClient.Messages.ReadAsync();
-
-        if (next.Message.AddSubscriptionToGroup != null)
-        {
-          var asg = next.Message.AddSubscriptionToGroup;
-
-
-          var table = asg.Conditions.Table;
-          var schema = asg.Conditions.Schema;
-
-          if (!dbManager.IsFullyReplicated(table, schema))
-          {
-            await dbManager.EnsureFullyReplicated(table, schema);
-          }
-
-          Console.WriteLine($"asg {schema}.{table}");
-        }
-
-        Console.WriteLine("read from client: " + next.Message.GetType());
-      }
+      Connection protocolClient = new Connection(sslStream, sub);
+      await Task.Delay(-1);
     }
     catch (OperationCanceledException)
     {
@@ -160,10 +144,6 @@ public static class Program
     catch (Exception ex)
     {
       Console.WriteLine($"[conn] error remote={remote} {ex.GetType().Name}: {ex.Message}");
-    }
-    finally
-    {
-      try { tcpClient.Close(); } catch { /* ignore */ }
     }
   }
 }

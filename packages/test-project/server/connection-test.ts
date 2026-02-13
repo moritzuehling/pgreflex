@@ -18,9 +18,15 @@ c.addEventListener("open", () => {
       conditions: {
         schema: "public",
         table: "users",
-        conditions: []
-      }
-    }
+        conditions: [
+          {
+            column: "email",
+            operand: 0,
+            str: "jenny@banani.co",
+          },
+        ],
+      },
+    },
   });
 });
 
