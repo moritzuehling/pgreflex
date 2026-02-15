@@ -12,7 +12,8 @@ export const testSubscription = reflex(publicProcedure, async ({ db }) => {
   ]);
 
   return {
-    receivedAfter: +new Date() - +user.createdAt,
+    receivedAfter: Date.now() - +user.createdAt,
+    sentAt: Date.now(),
     user,
   };
 });

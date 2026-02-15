@@ -82,7 +82,6 @@ class SubscriptionManager
               lock (inv.Connection)
               {
                 Console.WriteLine(inv.Connection);
-                Console.WriteLine("invalidated group " + inv.GroupId);
                 inv.Connection.SendMessage(new ServerToClient
                 {
                   InvalidateGroup = new()
@@ -106,7 +105,6 @@ class SubscriptionManager
   public List<TableSubscription> HandleInvalidations(ChangeEvent ce, SubscriptionState subs)
   {
     var res = new List<TableSubscription>();
-    Console.WriteLine($"Handling change event of ${ce.Table}");
 
     var table = subs.TryGetValue(ce.Table, out var subsToCheck);
     if (subsToCheck == null)
@@ -128,7 +126,6 @@ class SubscriptionManager
         res.Add(sub);
     }
 
-    Console.WriteLine($"Checked {subsToCheck.Count} subs, {res.Count} matched.");
     return res;
   }
 

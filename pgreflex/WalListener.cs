@@ -1,3 +1,5 @@
+using System.Data;
+using System.Diagnostics;
 using System.Threading.Channels;
 using Npgsql;
 using Npgsql.Replication;
@@ -23,7 +25,8 @@ class WalListener
     var slot = await rc.CreatePgOutputReplicationSlot(
         "pgreflex_" + Guid.NewGuid().ToString("N"),
         temporarySlot: true,
-        LogicalSlotSnapshotInitMode.NoExport
+        LogicalSlotSnapshotInitMode.NoExport,
+        twoPhase: true
       );
 
     return new WalListener
@@ -33,6 +36,7 @@ class WalListener
     };
   }
 
+  public static Stopwatch Last = Stopwatch.StartNew();
   public async Task Listen(CancellationToken token)
   {
     var enumerable = this.Connection.StartReplication(
@@ -54,6 +58,8 @@ class WalListener
     // So, we can simplify: we push the old and new row seperately into the queue - which makes the check later trivial
     await foreach (var message in enumerable)
     {
+      Console.WriteLine("behind 1: " + (DateTime.Now - message.ServerClock.Add(TimeSpan.FromHours(1))).TotalMilliseconds);
+
       if (message is InsertMessage insert)
       {
         await w.WriteAsync(new ChangeEvent
@@ -65,8 +71,14 @@ class WalListener
       }
       else if (message is FullUpdateMessage update)
       {
+        Last = Stopwatch.StartNew();
         var oldTuple = await FromReplicationTuple(update.OldRow);
         var newTuple = await FromReplicationTuple(update.NewRow);
+
+        var res = newTuple.First(a => (a.ColumnName == "created_at"));
+        Console.WriteLine("behind 2: " + (DateTime.Now - message.ServerClock.Add(TimeSpan.FromHours(1))).TotalMilliseconds);
+
+        Console.WriteLine("Delay: " + (DateTime.Now - (DateTime)res.Value).TotalMilliseconds);
 
         if (ReplicationTuplesEqual(oldTuple, newTuple))
         {
@@ -93,6 +105,8 @@ class WalListener
       {
         Console.WriteLine($"Got an unhandled message: {message.GetType().Name}");
       }
+
+      Connection.SetReplicationStatus(message.WalEnd);
     }
   }
 

@@ -9,8 +9,11 @@ export function TestPage() {
 
   const subscription = useSubscription(
     trpc.testSubscription.subscriptionOptions(undefined, {
-      onData() {
+      onData(data) {
+        // eslint-disable-next-line react-hooks/purity
         console.log("delay", Date.now() - ts);
+        // eslint-disable-next-line react-hooks/purity
+        console.log("server->client", Date.now() - data.sentAt);
       },
     }),
   );
