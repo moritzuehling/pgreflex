@@ -11,7 +11,7 @@ export type ReflexSubscribeTo = ReturnType<
 
 type FnMap = Map<string, () => void>;
 
-export async function reflexConnection(db: AnyPgDb) {
+export function reflexConnection(db: AnyPgDb) {
   let currentSocket: Connection | null = null;
 
   const invalidateGroupFn = new Map<string, () => void>();
@@ -44,6 +44,7 @@ export async function reflexConnection(db: AnyPgDb) {
           conditions,
         },
       });
+      console.log("addSubscription", hasSent);
       const { resolve, promise } = Promise.withResolvers<void>();
       if (hasSent ?? false) {
         subscriptionSucceededFn.set(subscriptionId, () => {
@@ -82,6 +83,8 @@ async function keepConnectionsAlive(
   while (true) {
     const c = connect(await getConnectInfo(db));
     console.log("reconnecting!");
+    await c.connected;
+    setConnection(c);
     await handleConnection(c, invalidateGroupFn, subscriptionSucceededFn);
     console.log("connection lost, reconnecting");
   }
@@ -94,6 +97,7 @@ async function handleConnection(
 ) {
   try {
     await connection.connected;
+    console.log("connected successfully");
     resolveAndClear(subscriptionSucceededFn);
     resolveAndClear(invalidateGroupFn);
     invalidateGroupFn.clear();

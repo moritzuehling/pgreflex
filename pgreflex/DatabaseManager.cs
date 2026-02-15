@@ -86,7 +86,7 @@ public class DatabaseManager
 
   public async Task EnsureFullyReplicated(string table, string? schema)
   {
-    var relName = schema != null ? $"\"{schema}\".\"{table}\"" : $"\"{table}\"";
+    var relName = !string.IsNullOrEmpty(schema) ? $"\"{schema}\".\"{table}\"" : $"\"{table}\"";
     Console.WriteLine($"Ensuring {relName} has REPLICA IDENTITY FULL");
 
 

@@ -64,7 +64,7 @@ export function reflexDb<DB extends AnyPgDb>(
     ) {
       await subscribeTo?.({
         table: getTableConfig(tbl).name,
-        schema: getTableConfig(tbl).schema ?? "",
+        schema: getTableConfig(tbl).schema as string,
         conditions: conditions.map(toWriteCondition),
       });
 
@@ -76,7 +76,7 @@ export function reflexDb<DB extends AnyPgDb>(
     ) {
       await subscribeTo?.({
         table: getTableConfig(tbl).name,
-        schema: getTableConfig(tbl).schema ?? "",
+        schema: getTableConfig(tbl).schema as string,
         conditions: conditions.map(toWriteCondition),
       });
       return await selectSingleOptional(db, tbl, conditions);
@@ -88,7 +88,7 @@ export function reflexDb<DB extends AnyPgDb>(
     ) {
       await subscribeTo?.({
         table: getTableConfig(tbl).name,
-        schema: getTableConfig(tbl).schema ?? "",
+        schema: getTableConfig(tbl).schema as string,
         conditions: conditions.map(toWriteCondition),
       });
       return await select(db, tbl, conditions, config);
@@ -101,7 +101,7 @@ export function reflexDb<DB extends AnyPgDb>(
     ) {
       await subscribeTo?.({
         table: getTableConfig(tbl).name,
-        schema: getTableConfig(tbl).schema ?? "",
+        schema: getTableConfig(tbl).schema as string,
         conditions: conditions.map(toWriteCondition),
       });
       return await selectColumns(db, tbl, select, conditions, config);

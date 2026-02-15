@@ -1,43 +1,19 @@
-import { getConnectInfo } from "pgreflex/connection/auth";
-import { connect } from "pgreflex/connection/socket";
-
 import { db } from "./drizzle";
+import { reflexConnection, reflexDb } from "pgreflex";
+import { usersTable } from "./schema";
 
-const ci = await getConnectInfo(db);
-const c = connect(ci);
+const connection = reflexConnection(db);
 
-// It would be illegal to insert the certificate here.
+while (true) {
+  const run = connection.createGroup();
 
-c.addEventListener("open", () => {
-  console.log("connected (TLS + pin OK)");
+  const myDb = reflexDb(db, run.subscribeTo);
+  const res = await myDb.selectSingle(usersTable, [
+    ["email", "==", "jenny@banani.co"],
+  ]);
+  console.log("Jenny is named", res.fullName);
 
-  c.send({
-    addSubscriptionToGroup: {
-      groupId: "test-group",
-      subscriptionId: "sub-1",
-      conditions: {
-        schema: "public",
-        table: "users",
-        conditions: [
-          {
-            column: "email",
-            operand: 0,
-            str: "jenny@banani.co",
-          },
-        ],
-      },
-    },
-  });
-});
-
-c.addEventListener("message", (e) => {
-  console.log("server said:", e.data);
-});
-
-c.addEventListener("error", (err) => {
-  console.error("connection error:", err);
-});
-
-c.addEventListener("close", () => {
-  console.log("closed");
-});
+  console.log("waiting for invalidation...");
+  await run.invalidated;
+  console.log("invalidated!");
+}
