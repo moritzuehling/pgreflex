@@ -93,6 +93,7 @@ public class DatabaseManager
     using (var cmd = DataSource.CreateCommand($"ALTER TABLE {relName} REPLICA IDENTITY FULL"))
     {
       await cmd.ExecuteNonQueryAsync();
+      ReplicatedTables.Add(table);
     }
   }
 

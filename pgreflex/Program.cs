@@ -64,9 +64,6 @@ public static class Program
       while (true)
       {
         var ce = await walListener.ChangeEvents.ReadAsync();
-        Console.WriteLine($"change event: {ce.Schema}.{ce.Table}:\n  {string.Join("\n  ", ce.ChangedColumns.Select(a =>
-        $"({a.ColumnType.Name}/{a.ValType.Name}) {a.ColumnName}: {a.Value} (${a.Value?.GetType()?.Name ?? "null"})"))}");
-
         await sub.HandleWalUpdate(ce);
       }
     });

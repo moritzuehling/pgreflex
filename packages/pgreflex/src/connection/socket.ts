@@ -20,6 +20,8 @@ export interface Connection {
   send(clientToServer: Omit<ClientToServer, "messageId">): boolean;
   messageIterator: AsyncGenerator<ServerToClient, void, void>;
   connected: Promise<void>;
+
+  get status(): object;
 }
 
 export function connect({ cert, server }: ConnectInfo): Connection {
@@ -60,23 +62,23 @@ export function connect({ cert, server }: ConnectInfo): Connection {
     onConnected();
   });
 
+  socket.on("error", (e) => {
+    onConnectFail(e);
+  });
+
   socket.on("close", (e) => {
-    onConnectFail(e.error);
     finishStream();
   });
 
   // Framing buffer
   let buf = Buffer.alloc(0);
   socket.on("data", (chunk: Buffer) => {
-    console.log("got bytes", chunk.byteLength);
     buf = Buffer.concat([buf, chunk]);
 
     while (true) {
       if (buf.length < 4) break; // Need at least length prefix
 
       const length = buf.readInt32LE(0);
-
-      console.log("length", buf.slice(0, 4));
 
       if (buf.length < 4 + length) break;
 
@@ -121,5 +123,24 @@ export function connect({ cert, server }: ConnectInfo): Connection {
     send,
     messageIterator,
     connected,
+
+    get status() {
+      return {
+        remote: socket.remoteAddress,
+        state: socket.readyState,
+        bytesRead: socket.bytesRead,
+        bytesWritten: socket.bytesWritten,
+        encrypted: socket.encrypted,
+        servername: socket.servername,
+        errored: socket.errored && {
+          name: socket.errored.name,
+          message: socket.errored.message,
+        },
+        serverCertificate: computeSpkiPinBase64(
+          socket.getPeerCertificate().raw,
+        ),
+        clientCertificate: cert.spkiSha256Base64,
+      };
+    },
   };
 }

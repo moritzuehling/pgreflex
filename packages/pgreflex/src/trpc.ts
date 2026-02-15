@@ -19,7 +19,7 @@ type ArgumentTypes<F extends Function> = F extends (...args: infer A) => unknown
   : never;
 
 export function reflexTrpc<DB extends AnyPgDb>(db: AnyPgDb) {
-  const connectionPromise = reflexConnection(db);
+  const connection = reflexConnection(db);
 
   return function reflex<
     TContext,
@@ -27,7 +27,7 @@ export function reflexTrpc<DB extends AnyPgDb>(db: AnyPgDb) {
     TContextOverrides,
     TInputIn,
     TInputOut,
-    TSubOuput
+    TSubOuput,
   >(
     proc: TRPCProcedureBuilder<
       TContext,
@@ -42,16 +42,14 @@ export function reflexTrpc<DB extends AnyPgDb>(db: AnyPgDb) {
     fn: (
       opts: ArgumentTypes<ArgumentTypes<typeof proc.subscription>[0]>[0] & {
         db: ReflexDB<DB>;
-      }
-    ) => TSubOuput
+      },
+    ) => TSubOuput,
   ): TRPCSubscriptionProcedure<{
     input: DefaultValue<TInputIn, void>;
     output: AsyncIterable<inferTrackedOutput<Awaited<TSubOuput>>, void, any>;
     meta: TMeta;
   }> {
     return proc.subscription(async function* manageSubscription(opts) {
-      const connection = await connectionPromise;
-
       while (!opts.signal?.aborted) {
         const group = await connection.createGroup();
 
@@ -62,9 +60,6 @@ export function reflexTrpc<DB extends AnyPgDb>(db: AnyPgDb) {
         yield await fn(newOpts);
         await group.invalidated;
       }
-
-      console.log("ending subscription");
-      console.log(opts.signal?.reason);
     });
   };
 }

@@ -1,4 +1,4 @@
-import { createBunHttpHandler } from "trpc-bun-adapter";
+import { createBunHttpHandler, createBunWSHandler } from "trpc-bun-adapter";
 import { appRouter } from "./router";
 
 const createContext = () => ({
@@ -11,19 +11,22 @@ const bunHandler = createBunHttpHandler({
   endpoint: "/trpc", // Default to ""
   createContext,
   onError: console.error,
-  allowMethodOverride: true,
   batching: {
     enabled: true,
   },
-  emitWsUpgrades: false, // pass true to upgrade to WebSocket
+  emitWsUpgrades: true,
+});
+
+const wsHandler = createBunWSHandler({
+  router: appRouter,
+  endpoint: "/trpc",
+  createContext,
+  onError: console.error,
 });
 
 Bun.serve({
   port: 3005,
-  fetch(request, response) {
-    return (
-      bunHandler(request, response) ??
-      new Response(`Server running! ${request.url}`, { status: 404 })
-    );
-  },
+  idleTimeout: 255,
+  websocket: wsHandler,
+  fetch: bunHandler,
 });

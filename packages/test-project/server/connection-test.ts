@@ -13,7 +13,5 @@ while (true) {
   ]);
   console.log("Jenny is named", res.fullName);
 
-  console.log("waiting for invalidation...");
   await run.invalidated;
-  console.log("invalidated!");
 }

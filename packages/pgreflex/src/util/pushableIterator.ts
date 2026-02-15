@@ -22,7 +22,6 @@ export function pushableIterator<T>() {
       }
 
       if (isFinished) {
-        console.log("generator is finished");
         return;
       }
 

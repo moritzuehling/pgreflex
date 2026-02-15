@@ -44,7 +44,6 @@ export function reflexConnection(db: AnyPgDb) {
           conditions,
         },
       });
-      console.log("addSubscription", hasSent);
       const { resolve, promise } = Promise.withResolvers<void>();
       if (hasSent ?? false) {
         subscriptionSucceededFn.set(subscriptionId, () => {
@@ -66,6 +65,12 @@ export function reflexConnection(db: AnyPgDb) {
       get isInvalidated() {
         return !invalidateGroupFn.has(groupId);
       },
+
+      get status() {
+        return {
+          connectionStatus: currentSocket?.connected,
+        };
+      },
     };
   }
 
@@ -81,12 +86,15 @@ async function keepConnectionsAlive(
   subscriptionSucceededFn: FnMap,
 ) {
   while (true) {
-    const c = connect(await getConnectInfo(db));
-    console.log("reconnecting!");
-    await c.connected;
-    setConnection(c);
-    await handleConnection(c, invalidateGroupFn, subscriptionSucceededFn);
-    console.log("connection lost, reconnecting");
+    try {
+      const c = connect(await getConnectInfo(db));
+      await c.connected;
+      setConnection(c);
+      await handleConnection(c, invalidateGroupFn, subscriptionSucceededFn);
+    } catch (e) {
+    } finally {
+      await new Promise((res) => setTimeout(res, 1000));
+    }
   }
 }
 
@@ -97,7 +105,6 @@ async function handleConnection(
 ) {
   try {
     await connection.connected;
-    console.log("connected successfully");
     resolveAndClear(subscriptionSucceededFn);
     resolveAndClear(invalidateGroupFn);
     invalidateGroupFn.clear();
