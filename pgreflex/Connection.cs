@@ -24,8 +24,6 @@ class Connection
 
   public void SendMessage(ServerToClient msg)
   {
-    Console.WriteLine("Send: " + WalListener.Last.Elapsed.TotalMicroseconds);
-
     lock (Underlying)
     {
       var header = new byte[4];
@@ -37,8 +35,6 @@ class Connection
       Underlying.Flush();
 
     }
-    Console.WriteLine("Send2: " + WalListener.Last.Elapsed.TotalMicroseconds);
-
   }
 
   public void Read()

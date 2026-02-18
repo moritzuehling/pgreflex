@@ -87,7 +87,6 @@ public static class Program
   {
     var remote = tcpClient.Client.RemoteEndPoint;
     var local = tcpClient.Client.LocalEndPoint;
-
     Console.WriteLine($"[conn] accepted remote={remote} local={local}");
 
     try
@@ -99,7 +98,6 @@ public static class Program
       // Get all client certificates announced in the db in the last 30 seconds
       // (both insert/query rely on CURRENT_TIMESTAMP on db server)
       var certificates = await dbManager.GetRecentClientCertificates();
-
 
       await using var sslStream = new SslStream(
           networkStream,

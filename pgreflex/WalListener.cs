@@ -6,6 +6,7 @@ using Npgsql.Replication;
 using Npgsql.Replication.Internal;
 using Npgsql.Replication.PgOutput;
 using Npgsql.Replication.PgOutput.Messages;
+using Pgreflex;
 
 class WalListener
 {
@@ -19,14 +20,14 @@ class WalListener
   {
     await db.CreatePublication();
 
-    var rc = new LogicalReplicationConnection(db.DataSource.ConnectionString);
+    var rc = new LogicalReplicationConnection(AppConfig.DatabaseConnectionString);
     await rc.Open();
 
     var slot = await rc.CreatePgOutputReplicationSlot(
         "pgreflex_" + Guid.NewGuid().ToString("N"),
         temporarySlot: true,
         LogicalSlotSnapshotInitMode.NoExport,
-        twoPhase: true
+        twoPhase: false
       );
 
     return new WalListener
@@ -36,7 +37,6 @@ class WalListener
     };
   }
 
-  public static Stopwatch Last = Stopwatch.StartNew();
   public async Task Listen(CancellationToken token)
   {
     var enumerable = this.Connection.StartReplication(
@@ -58,7 +58,7 @@ class WalListener
     // So, we can simplify: we push the old and new row seperately into the queue - which makes the check later trivial
     await foreach (var message in enumerable)
     {
-      Console.WriteLine("behind 1: " + (DateTime.Now - message.ServerClock.Add(TimeSpan.FromHours(1))).TotalMilliseconds);
+      Console.WriteLine("replication lag: " + (DateTime.Now - message.ServerClock.Add(TimeSpan.FromHours(1))).TotalMilliseconds);
 
       if (message is InsertMessage insert)
       {
@@ -71,21 +71,16 @@ class WalListener
       }
       else if (message is FullUpdateMessage update)
       {
-        Last = Stopwatch.StartNew();
         var oldTuple = await FromReplicationTuple(update.OldRow);
         var newTuple = await FromReplicationTuple(update.NewRow);
 
         var res = newTuple.First(a => (a.ColumnName == "created_at"));
-        Console.WriteLine("behind 2: " + (DateTime.Now - message.ServerClock.Add(TimeSpan.FromHours(1))).TotalMilliseconds);
-
-        Console.WriteLine("Delay: " + (DateTime.Now - (DateTime)res.Value).TotalMilliseconds);
 
         if (ReplicationTuplesEqual(oldTuple, newTuple))
         {
           Console.WriteLine($"Skipping update to {update.Relation.RelationName}, old and new tuple equal");
           continue;
         }
-
 
         await w.WriteAsync(new ChangeEvent
         {
@@ -101,9 +96,14 @@ class WalListener
           ChangedColumns = newTuple,
         });
       }
-      else
+      else if (message is FullDeleteMessage delete)
       {
-        Console.WriteLine($"Got an unhandled message: {message.GetType().Name}");
+        await w.WriteAsync(new ChangeEvent
+        {
+          Table = delete.Relation.RelationName,
+          Schema = delete.Relation.Namespace,
+          ChangedColumns = await FromReplicationTuple(delete.OldRow),
+        });
       }
 
       Connection.SetReplicationStatus(message.WalEnd);
