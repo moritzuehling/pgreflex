@@ -5,6 +5,7 @@ namespace Pgreflex;
 public static class AppConfig
 {
   public static string ListenHost => GetEnv("PGREFLEX_LISTEN_HOST", "127.0.0.1");
+  public static string AnnounceHost => GetEnv("PGREFLEX_ANNOUNCE_HOST", ListenHost);
   public static int ListenPort => GetEnvInt("PGREFLEX_LISTEN_PORT", 5435);
   public static TimeSpan HandshakeTimeout => TimeSpan.FromMilliseconds(GetEnvInt("PGREFLEX_TLS_HANDSHAKE_TIMEOUT_MS", 10_000));
 

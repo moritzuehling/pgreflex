@@ -71,7 +71,7 @@ public static class Program
     var listener = new TcpListener(AppConfig.ListenEndPoint);
     listener.Start(backlog: 512);
 
-    await dbManager.AnnouncePresence(walListener.Slot.Name, AppConfig.ListenHost, AppConfig.ListenPort, pinB64);
+    await dbManager.AnnouncePresence(walListener.Slot.Name, AppConfig.AnnounceHost, AppConfig.ListenPort, pinB64);
 
     Console.WriteLine("[server] ready. Waiting for connections...");
     Console.WriteLine($"[server] Startup took {sw.Elapsed.TotalSeconds:0.00}s");
