@@ -1,17 +1,20 @@
 import { db } from "./drizzle";
 import { reflexConnection, reflexDb } from "pgreflex";
-import { usersTable } from "./schema";
+import { teamsTable } from "./schema";
 
 const connection = reflexConnection(db);
 
 while (true) {
-  const run = connection.createGroup();
-
-  const myDb = reflexDb(db, run.subscribeTo);
-  const res = await myDb.selectSingle(usersTable, [
-    ["email", "==", "jenny@banani.co"],
+  const group = connection.createGroup();
+  const myDb = reflexDb(db, group.subscribeTo);
+  const team = await myDb.selectSingle(teamsTable, [
+    ["id", "==", "5tBTGcA8rfskJ1kKg3Yc"],
   ]);
-  console.log("Jenny is named", res.fullName);
+  console.clear();
+  console.log("Jenny is part of:");
+  console.log(team);
 
-  await run.invalidated;
+  // this promise resolves as soon as any query in the subscription would change
+  await group.invalidated;
+  console.log("invalidated!");
 }

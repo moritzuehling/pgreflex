@@ -1,8 +1,17 @@
-import { usersTable } from "../schema";
+// Backend (normal trpc, drizzle is used through `db` wrapped)
+import { teamsTable } from "../schema";
 import { publicProcedure, reflex } from "../trpc";
+
+export const teamSubscription = reflex(publicProcedure, async ({ db }) => {
+  return await db.selectSingle(teamsTable, [
+    ["id", "==", "5tBTGcA8rfskJ1kKg3Yc"],
+  ]);
+});
+
 import { db } from "../drizzle";
 import { z } from "zod";
 import { eq } from "drizzle-orm";
+import { usersTable } from "../schema";
 
 export const testSubscription = reflex(publicProcedure, async ({ db }) => {
   console.timeEnd("full update");
