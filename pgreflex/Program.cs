@@ -1,14 +1,13 @@
-﻿using System.Net;
+﻿global using static Logger;
 using System.Net.Security;
 using System.Net.Sockets;
 using System.Security.Authentication;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
-using System.Text;
 using Npgsql;
-using Google.Protobuf;
 
 namespace Pgreflex;
+
 
 public static class Program
 {
@@ -17,7 +16,7 @@ public static class Program
     var sw = System.Diagnostics.Stopwatch.StartNew();
     DotNetEnv.Env.TraversePath().Load();
 
-    Console.WriteLine($"pgreflex starting...");
+    Log()($"pgreflex starting...");
 
     var source = NpgsqlDataSource.Create(AppConfig.DatabaseConnectionString);
 
@@ -55,7 +54,7 @@ public static class Program
       try { await walListener.Listen(CancellationToken.None); }
       catch (Exception e)
       {
-        Console.WriteLine(e);
+        Error()(e);
       }
     });
 
@@ -73,8 +72,8 @@ public static class Program
 
     await dbManager.AnnouncePresence(walListener.Slot.Name, AppConfig.AnnounceHost, AppConfig.ListenPort, pinB64);
 
-    Console.WriteLine("[server] ready. Waiting for connections...");
-    Console.WriteLine($"[server] Startup took {sw.Elapsed.TotalSeconds:0.00}s");
+    Log()("[server] ready. Waiting for connections...");
+    Log()($"[server] Startup took {sw.Elapsed.TotalSeconds:0.00}s");
 
     while (true)
     {
@@ -87,7 +86,7 @@ public static class Program
   {
     var remote = tcpClient.Client.RemoteEndPoint;
     var local = tcpClient.Client.LocalEndPoint;
-    Console.WriteLine($"[conn] accepted remote={remote} local={local}");
+    Log()($"[conn] accepted remote={remote} local={local}");
 
     try
     {
@@ -127,18 +126,18 @@ public static class Program
       using var cts = new CancellationTokenSource(AppConfig.HandshakeTimeout);
       await sslStream.AuthenticateAsServerAsync(options, cts.Token);
 
-      Console.WriteLine($"[conn] tls established remote={remote} protocol={sslStream.SslProtocol} cipher={sslStream.NegotiatedCipherSuite}");
+      Log()($"[conn] tls established remote={remote} protocol={sslStream.SslProtocol} cipher={sslStream.NegotiatedCipherSuite}");
 
       Connection protocolClient = new Connection(sslStream, sub);
       await Task.Delay(-1);
     }
     catch (OperationCanceledException)
     {
-      Console.WriteLine($"[conn] tls handshake timed out remote={remote}");
+      Log()($"[conn] tls handshake timed out remote={remote}");
     }
     catch (Exception ex)
     {
-      Console.WriteLine($"[conn] error remote={remote} {ex.GetType().Name}: {ex.Message}");
+      Log()($"[conn] error remote={remote} {ex.GetType().Name}: {ex.Message}");
     }
   }
 }

@@ -17,14 +17,14 @@ public class DatabaseManager
 
   public async Task ResetSchema()
   {
-    Console.WriteLine("[schema] Debug: Deleting existing schema");
+    Warn()("Debug: Deleting existing schema");
     await using var cmd = DataSource.CreateCommand("DROP SCHEMA IF EXISTS pgreflex CASCADE;");
     await cmd.ExecuteNonQueryAsync();
   }
 
   public async Task InitSchema()
   {
-    Console.WriteLine("[schema] Ensuring pgreflex schema exists...");
+    Log()("[schema] Ensuring pgreflex schema exists...");
     var script = LoadSqlScript("init.sql");
     await using var command = DataSource.CreateCommand(script);
     await command.ExecuteNonQueryAsync();
@@ -46,7 +46,7 @@ public class DatabaseManager
 
   public async Task AnnouncePresence(string slotName, string host, int port, string certificateHash)
   {
-    Console.WriteLine($"[db] Announcing Presence for slot name {slotName}");
+    Log()($"[db] Announcing Presence for slot name {slotName}");
     await using var command = DataSource.CreateCommand("INSERT INTO pgreflex.servers (slot_name, host, port, certificate_hash) VALUES ($1, $2, $3, $4)");
     command.Parameters.Add(new NpgsqlParameter(null, slotName));
     command.Parameters.Add(new NpgsqlParameter(null, host));
@@ -65,11 +65,11 @@ public class DatabaseManager
       cmd.CommandText = $"CREATE PUBLICATION \"pgreflex\" FOR ALL TABLES";
       await cmd.ExecuteNonQueryAsync();
 
-      Console.WriteLine(" -> Publication was successfully created!");
+      Log()(" -> Publication was successfully created!");
     }
     catch (PostgresException exc) when (exc.SqlState == PgDuplicateObject)
     {
-      Console.WriteLine(" -> Not creating publication, already exists");
+      Log()(" -> Not creating publication, already exists");
     }
   }
 
@@ -87,7 +87,7 @@ public class DatabaseManager
   public async Task EnsureFullyReplicated(string table, string? schema)
   {
     var relName = !string.IsNullOrEmpty(schema) ? $"\"{schema}\".\"{table}\"" : $"\"{table}\"";
-    Console.WriteLine($"Ensuring {relName} has REPLICA IDENTITY FULL");
+    Log()($"Ensuring {relName} has REPLICA IDENTITY FULL");
 
 
     using (var cmd = DataSource.CreateCommand($"ALTER TABLE {relName} REPLICA IDENTITY FULL"))

@@ -19,8 +19,7 @@ record TableSubscription
 class SubscriptionList
 {
   SubscriptionState _tables = SubscriptionState.Empty;
-
-  public ImmutableDictionary<string, TableSubList> Tables => _tables;
+  public SubscriptionState Tables => _tables;
 
   public void Add(string tableName, TableSubscription subscription)
   {
@@ -31,7 +30,7 @@ class SubscriptionList
     var newTables = origTables.SetItem(tableName, tableState.Add(subscription));
 
     if (_tables != origTables)
-      Console.WriteLine("wtf violation");
+      Error()("wtf violation");
 
     _tables = newTables;
     Debug();

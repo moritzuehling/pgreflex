@@ -63,7 +63,7 @@ class Connection
     }
     catch (EndOfStreamException)
     {
-      Console.WriteLine("Client disconnected");
+      Log()("Client disconnected");
     }
   }
 }

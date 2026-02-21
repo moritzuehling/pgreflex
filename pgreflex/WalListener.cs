@@ -44,7 +44,7 @@ class WalListener
       new PgOutputReplicationOptions("pgreflex", PgOutputProtocolVersion.V4, true, PgOutputStreamingMode.Off, true, false),
       token
     );
-    Console.WriteLine("[wal] Started listening!");
+    Log()("[wal] Started listening!");
 
 
     var w = Changes.Writer;
@@ -58,7 +58,7 @@ class WalListener
     // So, we can simplify: we push the old and new row seperately into the queue - which makes the check later trivial
     await foreach (var message in enumerable)
     {
-      Console.WriteLine("replication lag: " + (DateTime.Now - message.ServerClock.Add(TimeSpan.FromHours(1))).TotalMilliseconds);
+      Log()("replication lag: " + (DateTime.Now - message.ServerClock.Add(TimeSpan.FromHours(1))).TotalMilliseconds);
 
       if (message is InsertMessage insert)
       {
@@ -78,7 +78,7 @@ class WalListener
 
         if (ReplicationTuplesEqual(oldTuple, newTuple))
         {
-          Console.WriteLine($"Skipping update to {update.Relation.RelationName}, old and new tuple equal");
+          Log()($"Skipping update to {update.Relation.RelationName}, old and new tuple equal");
           continue;
         }
 

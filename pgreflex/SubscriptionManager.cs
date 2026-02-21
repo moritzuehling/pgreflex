@@ -81,7 +81,7 @@ class SubscriptionManager
             {
               lock (inv.Connection)
               {
-                Console.WriteLine(inv.Connection);
+                Log()(inv.Connection);
                 inv.Connection.SendMessage(new ServerToClient
                 {
                   InvalidateGroup = new()
@@ -94,7 +94,7 @@ class SubscriptionManager
             }
             catch (Exception e)
             {
-              Console.WriteLine("Encountered error when trying to send invalidation: " + e);
+              Log()("Encountered error when trying to send invalidation: " + e);
             }
           }
         });
@@ -109,13 +109,13 @@ class SubscriptionManager
     var table = subs.TryGetValue(ce.Table, out var subsToCheck);
     if (subsToCheck == null)
     {
-      Console.WriteLine($"Table {ce.Table} was never subscribed (available: {string.Join(", ", subs.Keys)})");
+      Log()($"Table {ce.Table} was never subscribed (available: {string.Join(", ", subs.Keys)})");
       return res;
     }
 
     if (subsToCheck.IsEmpty)
     {
-      Console.WriteLine($"Table {ce.Table} empty. Skipping.");
+      Log()($"Table {ce.Table} empty. Skipping.");
       return res;
     }
 
@@ -134,11 +134,10 @@ class SubscriptionManager
     var col = ev.ChangedColumns.Find(a => a.ColumnName == cond.Column);
     if (col == null)
     {
-      Console.WriteLine($"Column {cond.Column} does not exist in change event for ${ev.Table}");
+      Warn()($"Column {cond.Column} does not exist in change event for ${ev.Table}");
       return false;
     }
 
-    Console.WriteLine("operand" + cond.Operand);
 
     switch (cond.Operand)
     {
@@ -152,7 +151,6 @@ class SubscriptionManager
 
         if (cond.HasStr)
         {
-          Console.WriteLine($"(string){cond.Str} == (string){col.Value}");
           return (string)cond.Str == (string)col.Value;
         }
 
