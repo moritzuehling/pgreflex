@@ -7,7 +7,7 @@
     },
     "packages/pgreflex": {
       "name": "pgreflex",
-      "version": "0.0.1",
+      "version": "0.0.2",
       "dependencies": {
         "@bufbuild/protobuf": "^2.11.0",
         "@peculiar/x509": "^1.14.3",
@@ -21,8 +21,8 @@
         "vitest": "^4.0.18",
       },
       "peerDependencies": {
-        "@trpc/server": "^11.8.1",
-        "drizzle-orm": "^0.45.1",
+        "@trpc/server": ">=11.8.1",
+        "drizzle-orm": ">=0.45.0",
       },
     },
     "packages/test-project": {

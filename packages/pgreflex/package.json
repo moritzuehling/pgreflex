@@ -1,6 +1,6 @@
 {
   "name": "pgreflex",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Reactive Postgres",
   "type": "module",
   "license": "MIT",
@@ -39,8 +39,8 @@
     "vitest": "^4.0.18"
   },
   "peerDependencies": {
-    "@trpc/server": "^11.8.1",
-    "drizzle-orm": "^0.45.1"
+    "@trpc/server": ">=11.8.1",
+    "drizzle-orm": ">=0.45.0"
   },
   "dependencies": {
     "@peculiar/x509": "^1.14.3",

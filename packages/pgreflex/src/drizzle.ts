@@ -12,32 +12,36 @@ import {
   type SQL,
   asc,
   desc,
+  type Table,
+  type Column,
+  type SelectedFieldsFlat,
 } from "drizzle-orm";
 import {
   getTableConfig,
-  type AnyPgTable,
-  type PgColumn,
   type PgDatabase,
   type PgQueryResultHKT,
-  type SelectedFields,
 } from "drizzle-orm/pg-core";
 import type { ReflexSubscribeTo } from "./connection";
 import { toWriteCondition } from "./util/toWireCondition";
 
 export type AnyPgDb = PgDatabase<PgQueryResultHKT>;
 
-type TypedColumns<T extends AnyPgTable, Q extends ColumnDataType> = {
+type SelectedFields<T extends Table> = SelectedFieldsFlat<
+  T["_"]["columns"][string]
+>;
+
+type TypedColumns<T extends Table, Q extends ColumnDataType> = {
   [C in keyof T["_"]["columns"]]: T["_"]["columns"][C]["dataType"] extends Q
     ? C
     : never;
 }[keyof T["_"]["columns"]] &
   keyof T;
-type NullableColumns<T extends AnyPgTable> = {
+type NullableColumns<T extends Table> = {
   [C in keyof T["$inferSelect"]]: null extends T["$inferSelect"][C] ? C : never;
 }[keyof T["$inferSelect"]] &
   keyof T;
 
-export type Condition<T extends AnyPgTable> =
+export type Condition<T extends Table> =
   | [
       TypedColumns<T, "string">,
       "==" | "!=" | "<" | ">" | "<=" | ">=" | "like",
@@ -46,7 +50,7 @@ export type Condition<T extends AnyPgTable> =
   | [TypedColumns<T, "number">, "==" | "!=" | "<" | ">" | "<=" | ">=", number]
   | [NullableColumns<T>, "==" | "!=", null];
 
-interface SelectConfig<T extends AnyPgTable> {
+interface SelectConfig<T extends Table> {
   limit?: number;
   offset?: number;
 
@@ -58,10 +62,7 @@ export function reflexDb<DB extends AnyPgDb>(
   subscribeTo?: ReflexSubscribeTo,
 ) {
   return {
-    async selectSingle<T extends AnyPgTable>(
-      tbl: T,
-      conditions: Condition<T>[],
-    ) {
+    async selectSingle<T extends Table>(tbl: T, conditions: Condition<T>[]) {
       await subscribeTo?.({
         table: getTableConfig(tbl).name,
         schema: getTableConfig(tbl).schema as string,
@@ -70,7 +71,7 @@ export function reflexDb<DB extends AnyPgDb>(
 
       return await selectSingle(db, tbl, conditions);
     },
-    async selectSingleOptional<T extends AnyPgTable>(
+    async selectSingleOptional<T extends Table>(
       tbl: T,
       conditions: Condition<T>[],
     ) {
@@ -81,7 +82,7 @@ export function reflexDb<DB extends AnyPgDb>(
       });
       return await selectSingleOptional(db, tbl, conditions);
     },
-    async select<SF extends SelectedFields, T extends AnyPgTable>(
+    async select<SF extends SelectedFields<T>, T extends Table>(
       tbl: T,
       conditions: Condition<T>[],
       config: SelectConfig<T> = {},
@@ -93,7 +94,10 @@ export function reflexDb<DB extends AnyPgDb>(
       });
       return await select(db, tbl, conditions, config);
     },
-    async selectColumns<SF extends SelectedFields, T extends AnyPgTable>(
+    async selectColumns<
+      SF extends SelectedFieldsFlat<T["_"]["columns"][string]>,
+      T extends Table,
+    >(
       tbl: T,
       select: SF,
       conditions: Condition<T>[],
@@ -111,7 +115,7 @@ export function reflexDb<DB extends AnyPgDb>(
 
 export type ReflexDB<DB extends AnyPgDb> = ReturnType<typeof reflexDb<DB>>;
 
-async function selectSingle<DB extends AnyPgDb, T extends AnyPgTable>(
+async function selectSingle<DB extends AnyPgDb, T extends Table>(
   db: DB,
   tbl: T,
   conditions: Condition<T>[],
@@ -129,7 +133,7 @@ async function selectSingle<DB extends AnyPgDb, T extends AnyPgTable>(
   return res[0];
 }
 
-async function selectSingleOptional<DB extends AnyPgDb, T extends AnyPgTable>(
+async function selectSingleOptional<DB extends AnyPgDb, T extends Table>(
   db: DB,
   tbl: T,
   conditions: Condition<T>[],
@@ -143,7 +147,7 @@ async function selectSingleOptional<DB extends AnyPgDb, T extends AnyPgTable>(
   return res.at(0);
 }
 
-function select<DB extends AnyPgDb, T extends AnyPgTable>(
+function select<DB extends AnyPgDb, T extends Table>(
   db: DB,
   tbl: T,
   conditions: Condition<T>[],
@@ -158,7 +162,7 @@ function select<DB extends AnyPgDb, T extends AnyPgTable>(
   const orderBy = config.orderBy
     ? offset.orderBy(
         ...config.orderBy.map(([colName, order]) =>
-          orderFns[order](tbl[colName] as PgColumn),
+          orderFns[order](tbl[colName] as Column),
         ),
       )
     : offset;
@@ -167,9 +171,9 @@ function select<DB extends AnyPgDb, T extends AnyPgTable>(
 }
 
 function selectColumns<
-  SF extends SelectedFields,
+  SF extends SelectedFields<T>,
   DB extends AnyPgDb,
-  T extends AnyPgTable,
+  T extends Table,
 >(
   db: DB,
   tbl: T,
@@ -191,7 +195,7 @@ function selectColumns<
   const orderBy = config.orderBy
     ? (offset.orderBy(
         ...config.orderBy.map(([colName, order]) =>
-          orderFns[order](tbl[colName] as PgColumn),
+          orderFns[order](tbl[colName] as Column),
         ),
       ) as typeof where)
     : offset;
@@ -199,11 +203,11 @@ function selectColumns<
   return orderBy as typeof where;
 }
 
-function getCondition<T extends AnyPgTable>(
+function getCondition<T extends Table>(
   t: T,
   [colName, op, v]: Condition<T>,
 ): SQL {
-  const c = t[colName] as PgColumn;
+  const c = t[colName] as Column;
 
   switch (op) {
     case "like":

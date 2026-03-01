@@ -6,5 +6,6 @@ export default defineConfig({
     index: "src/index.ts",
     "connection/*": "src/connection/*",
   },
+  skipNodeModulesBundle: true,
   // ...config options
 });
