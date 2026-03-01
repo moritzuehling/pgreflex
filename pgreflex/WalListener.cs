@@ -58,7 +58,7 @@ class WalListener
     // So, we can simplify: we push the old and new row seperately into the queue - which makes the check later trivial
     await foreach (var message in enumerable)
     {
-      Log()("replication lag: " + (DateTime.Now - message.ServerClock.Add(TimeSpan.FromHours(1))).TotalMilliseconds);
+      Log()("replication lag: " + (DateTimeOffset.Now - message.ServerClock).TotalMilliseconds);
 
       if (message is InsertMessage insert)
       {
