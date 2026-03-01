@@ -57,8 +57,6 @@ static class Logger
     Console.ResetColor();
   }
 
-  static int MaxPathLen = 0;
-  static int MaxLineLen = 3;
   private static string LongestL(string raw, ref int length)
   {
     length = Math.Max(raw.Length, length);
