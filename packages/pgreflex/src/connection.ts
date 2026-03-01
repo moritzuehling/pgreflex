@@ -87,11 +87,13 @@ async function keepConnectionsAlive(
 ) {
   while (true) {
     try {
+      console.log("trying to connect");
       const c = connect(await getConnectInfo(db));
       await c.connected;
       setConnection(c);
       await handleConnection(c, invalidateGroupFn, subscriptionSucceededFn);
     } catch (e) {
+      console.error("could not connect", e);
     } finally {
       await new Promise((res) => setTimeout(res, 1000));
     }

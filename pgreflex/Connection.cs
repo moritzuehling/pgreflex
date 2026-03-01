@@ -4,7 +4,7 @@ using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using Pgreflex.Protocol;
 
-class Connection
+class Connection : IDisposable
 {
   Stream Underlying { get; set; }
 
@@ -12,14 +12,20 @@ class Connection
 
   Thread ReadThread;
 
+  TaskCompletionSource ReadThreadFinished = new TaskCompletionSource();
 
-  public Connection(Stream underlying, SubscriptionManager sub)
+  public Task Done => ReadThreadFinished.Task;
+
+
+  public Connection(Stream underlying, SubscriptionManager sub, CancellationToken cancelled)
   {
     Underlying = underlying;
     Subscription = sub;
 
     ReadThread = new Thread(Read);
     ReadThread.Start();
+
+    cancelled.Register(() => underlying.Close());
   }
 
   public void SendMessage(ServerToClient msg)
@@ -65,6 +71,17 @@ class Connection
     {
       Log()("Client disconnected");
     }
+    finally
+    {
+      this.Dispose();
+      this.ReadThreadFinished.SetResult();
+    }
+
+  }
+
+  public void Dispose()
+  {
+    this.Underlying.Dispose();
   }
 }
 

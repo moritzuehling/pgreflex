@@ -13,14 +13,13 @@ class WalListener
   public required LogicalReplicationConnection Connection { get; set; }
   public required PgOutputReplicationSlot Slot { get; set; }
 
-  private Channel<ChangeEvent> Changes = Channel.CreateUnbounded<ChangeEvent>(new() { SingleWriter = true });
-  public ChannelReader<ChangeEvent> ChangeEvents { get { return Changes.Reader; } }
+  public CancellationTokenSource CancellationTokenSource = new CancellationTokenSource();
 
-  public static async Task<WalListener> Create(DatabaseManager db)
+  public static async Task<WalListener> Create(string connectionString, DatabaseManager db)
   {
     await db.CreatePublication();
 
-    var rc = new LogicalReplicationConnection(AppConfig.DatabaseConnectionString);
+    var rc = new LogicalReplicationConnection(connectionString);
     await rc.Open();
 
     var slot = await rc.CreatePgOutputReplicationSlot(
@@ -37,17 +36,19 @@ class WalListener
     };
   }
 
-  public async Task Listen(CancellationToken token)
+  public async Task Listen(ChannelWriter<ChangeEvent> writer)
   {
+    AddLoggerPrefix("WAL");
+
     var enumerable = this.Connection.StartReplication(
       Slot,
       new PgOutputReplicationOptions("pgreflex", PgOutputProtocolVersion.V4, true, PgOutputStreamingMode.Off, true, false),
-      token
+      this.CancellationTokenSource.Token
     );
-    Log()("[wal] Started listening!");
+    Log()("Listening!");
 
 
-    var w = Changes.Writer;
+    var w = writer;
 
     // We can make a massive simplication here:
     // There's 3 cases: update, insert, delete
@@ -56,57 +57,70 @@ class WalListener
     // update: the old *or* new row matches the conditions
 
     // So, we can simplify: we push the old and new row seperately into the queue - which makes the check later trivial
-    await foreach (var message in enumerable)
+    try
     {
-      Log()("replication lag: " + (DateTimeOffset.Now - message.ServerClock).TotalMilliseconds);
-
-      if (message is InsertMessage insert)
+      await foreach (var message in enumerable)
       {
-        await w.WriteAsync(new ChangeEvent
-        {
-          Table = insert.Relation.RelationName,
-          Schema = insert.Relation.Namespace,
-          ChangedColumns = await FromReplicationTuple(insert.NewRow),
-        });
-      }
-      else if (message is FullUpdateMessage update)
-      {
-        var oldTuple = await FromReplicationTuple(update.OldRow);
-        var newTuple = await FromReplicationTuple(update.NewRow);
+        Log()("replication lag: " + (DateTimeOffset.Now - message.ServerClock).TotalMilliseconds);
 
-        var res = newTuple.First(a => (a.ColumnName == "created_at"));
-
-        if (ReplicationTuplesEqual(oldTuple, newTuple))
+        if (message is InsertMessage insert)
         {
-          Log()($"Skipping update to {update.Relation.RelationName}, old and new tuple equal");
-          continue;
+          await w.WriteAsync(new ChangeEvent
+          {
+            Table = insert.Relation.RelationName,
+            Schema = insert.Relation.Namespace,
+            ChangedColumns = await FromReplicationTuple(insert.NewRow),
+          });
+        }
+        else if (message is FullUpdateMessage update)
+        {
+          var oldTuple = await FromReplicationTuple(update.OldRow);
+          var newTuple = await FromReplicationTuple(update.NewRow);
+
+          if (ReplicationTuplesEqual(oldTuple, newTuple))
+          {
+            Log()($"Skipping update to {update.Relation.RelationName}, old and new tuple equal");
+            continue;
+          }
+
+          await w.WriteAsync(new ChangeEvent
+          {
+            Table = update.Relation.RelationName,
+            Schema = update.Relation.Namespace,
+            ChangedColumns = oldTuple
+          });
+
+          await w.WriteAsync(new ChangeEvent
+          {
+            Table = update.Relation.RelationName,
+            Schema = update.Relation.Namespace,
+            ChangedColumns = newTuple,
+          });
+        }
+        else if (message is FullDeleteMessage delete)
+        {
+          await w.WriteAsync(new ChangeEvent
+          {
+            Table = delete.Relation.RelationName,
+            Schema = delete.Relation.Namespace,
+            ChangedColumns = await FromReplicationTuple(delete.OldRow),
+          });
         }
 
-        await w.WriteAsync(new ChangeEvent
-        {
-          Table = update.Relation.RelationName,
-          Schema = update.Relation.Namespace,
-          ChangedColumns = oldTuple
-        });
-
-        await w.WriteAsync(new ChangeEvent
-        {
-          Table = update.Relation.RelationName,
-          Schema = update.Relation.Namespace,
-          ChangedColumns = newTuple,
-        });
+        Connection.SetReplicationStatus(message.WalEnd);
       }
-      else if (message is FullDeleteMessage delete)
-      {
-        await w.WriteAsync(new ChangeEvent
-        {
-          Table = delete.Relation.RelationName,
-          Schema = delete.Relation.Namespace,
-          ChangedColumns = await FromReplicationTuple(delete.OldRow),
-        });
-      }
-
-      Connection.SetReplicationStatus(message.WalEnd);
+    }
+    catch (OperationCanceledException)
+    {
+      Log()("Replication was cancelled - disconnecting!");
+    }
+    catch (Exception e)
+    {
+      Error()("Error when processing slot", e);
+    }
+    finally
+    {
+      await Connection.DropReplicationSlot(Slot.Name);
     }
   }
 

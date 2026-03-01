@@ -73,7 +73,7 @@ class SubscriptionManager
       {
         var invalidations = HandleInvalidations(ce, subs.Tables);
         subs.Remove(invalidations.Select(a => a.GroupId).ToList());
-        _ = Task.Run(async () =>
+        _ = Task.Run(() =>
         {
           foreach (var inv in invalidations)
           {
@@ -94,7 +94,7 @@ class SubscriptionManager
             }
             catch (Exception e)
             {
-              Log()("Encountered error when trying to send invalidation: " + e);
+              Log()("Encountered error when trying to send invalidation: ", e);
             }
           }
         });

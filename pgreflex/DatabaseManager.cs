@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Data.Common;
 using System.Diagnostics;
 using Npgsql;
 using Npgsql.Replication;
@@ -15,6 +16,28 @@ public class DatabaseManager
 
   public required NpgsqlDataSource DataSource;
 
+  public string Host
+  {
+    get
+    {
+      var builder = new DbConnectionStringBuilder
+      {
+        ConnectionString = DataSource.ConnectionString
+      };
+
+      var host = "(unknown)";
+      var port = "5432";
+
+      if (builder.ContainsKey("host"))
+        host = builder["host"] as string;
+
+      if (builder.ContainsKey("port"))
+        port = builder["port"] as string;
+
+      return $"{host}:{port}";
+    }
+  }
+
   public async Task ResetSchema()
   {
     Warn()("Debug: Deleting existing schema");
@@ -24,7 +47,7 @@ public class DatabaseManager
 
   public async Task InitSchema()
   {
-    Log()("[schema] Ensuring pgreflex schema exists...");
+    Log()("Ensuring pgreflex schema exists...");
     var script = LoadSqlScript("init.sql");
     await using var command = DataSource.CreateCommand(script);
     await command.ExecuteNonQueryAsync();
@@ -46,7 +69,7 @@ public class DatabaseManager
 
   public async Task AnnouncePresence(string slotName, string host, int port, string certificateHash)
   {
-    Log()($"[db] Announcing Presence for slot name {slotName}");
+    Log()($"Announcing Presence for slot name {slotName}");
     await using var command = DataSource.CreateCommand("INSERT INTO pgreflex.servers (slot_name, host, port, certificate_hash) VALUES ($1, $2, $3, $4)");
     command.Parameters.Add(new NpgsqlParameter(null, slotName));
     command.Parameters.Add(new NpgsqlParameter(null, host));

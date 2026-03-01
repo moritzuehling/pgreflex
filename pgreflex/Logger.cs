@@ -1,3 +1,5 @@
+using System.Collections.Immutable;
+using System.Reflection.Metadata;
 using System.Runtime.CompilerServices;
 
 
@@ -6,6 +8,12 @@ static class Logger
   static object Dummy = new object();
 
   public delegate void LogFn(params object[] args);
+
+  static AsyncLocal<ImmutableList<string>?> Prefix = new();
+  public static void AddLoggerPrefix(string prefix)
+  {
+    Prefix.Value = (Prefix.Value ?? ImmutableList<string>.Empty).Add(prefix);
+  }
 
   public static LogFn Log([CallerMemberName] string caller = "Unknown", [CallerFilePath] string file = "unknown.cs", [CallerLineNumber] int line = 0)
   {
@@ -55,6 +63,15 @@ static class Logger
     Console.ForegroundColor = ConsoleColor.DarkGray;
     Console.Write("() ");
     Console.ResetColor();
+
+    foreach (var entry in Prefix.Value ?? ImmutableList<string>.Empty)
+    {
+      Console.Write("[");
+      Console.ForegroundColor = ConsoleColor.DarkRed;
+      Console.Write(entry);
+      Console.ResetColor();
+      Console.Write("] ");
+    }
   }
 
   private static string LongestL(string raw, ref int length)
