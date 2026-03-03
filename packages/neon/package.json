@@ -1,0 +1,15 @@
+{
+  "name": "@pgreflex/neon",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@neondatabase/api-client": "^2.7.0"
+  }
+}
