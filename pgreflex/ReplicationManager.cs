@@ -12,28 +12,28 @@ using System.Threading.Channels;
 
 namespace Pgreflex;
 
-class ReplicationManager
+class ReplicationManager : IDisposable
 {
-  string ConnectionString { get; set; }
+  public string ConnectionString { get; set; }
+  private IPEndPoint EndPoint { get; set; }
   DatabaseManager DbManager { get; set; }
   string SlotName = "pgreflex_" + Guid.NewGuid().ToString("N");
   SubscriptionManager SubscriptionManager { get; } = new SubscriptionManager();
   CancellationTokenSource Cancelled = new CancellationTokenSource();
   TcpListener Listener;
 
-  public ReplicationManager(string connectionString, IPEndPoint ListenEndpoint)
+  public ReplicationManager(string connectionString, IPEndPoint listenEndpoint)
   {
     this.ConnectionString = connectionString;
     this.DbManager = new DatabaseManager { DataSource = NpgsqlDataSource.Create(ConnectionString) };
-
-
-
-    Listener = new TcpListener(AppConfig.ListenEndPoint);
+    EndPoint = listenEndpoint;
+    Listener = new TcpListener(listenEndpoint);
   }
 
   public async Task Run()
   {
     AddLoggerPrefix(DbManager.Host);
+    Log()("Listening on", EndPoint);
 
     if (AppConfig.InitializeSchema)
     {
@@ -139,4 +139,10 @@ class ReplicationManager
     }
   }
 
+  public void Dispose()
+  {
+    Log()("Stopping listening!");
+    this.Cancelled.Cancel();
+    Listener.Dispose();
+  }
 }
