@@ -26,8 +26,8 @@ class SubscriptionManager
   public ValueTask HandleClientMessage(ClientMessage cmst) =>
     MessageQueue.Writer.WriteAsync(new SubscriptionManagerMessage() { ClientMessage = cmst });
 
-  public ValueTask HandleWalUpdate(ChangeEvent ev) =>
-    MessageQueue.Writer.WriteAsync(new SubscriptionManagerMessage() { ChangeEvent = ev });
+  ValueTask HandleWalUpdate(ChangeEvent ev) =>
+   MessageQueue.Writer.WriteAsync(new SubscriptionManagerMessage() { ChangeEvent = ev });
 
   public async Task Listen(DatabaseManager dbManager, CancellationToken? token = null)
   {
@@ -102,6 +102,13 @@ class SubscriptionManager
     }
   }
 
+  public async Task Ingest(ChannelReader<ChangeEvent> reader)
+  {
+    await foreach (var ev in reader.ReadAllAsync())
+    {
+      await HandleWalUpdate(ev);
+    }
+  }
   public List<TableSubscription> HandleInvalidations(ChangeEvent ce, SubscriptionState subs)
   {
     var res = new List<TableSubscription>();
@@ -131,6 +138,7 @@ class SubscriptionManager
 
   public bool Check(Condition cond, ChangeEvent ev)
   {
+
     var changedCol = ev.ChangedColumns.Find(a => a.ColumnName == cond.Column);
     if (changedCol == null)
     {

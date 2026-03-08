@@ -53,6 +53,7 @@ class ReplicationManager : IDisposable
     var walConnection = new WalConnection();
     _ = Task.Run(() => walConnection.Run(ConnectionString, DbManager, changeEvents.Writer));
     _ = Task.Run(() => SubscriptionManager.Listen(DbManager, Cancelled.Token));
+    _ = Task.Run(() => SubscriptionManager.Ingest(changeEvents.Reader));
 
     Listener.Start(backlog: 512);
 

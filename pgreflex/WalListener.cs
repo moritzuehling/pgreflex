@@ -61,7 +61,7 @@ class WalListener
     {
       await foreach (var message in enumerable)
       {
-        Log()("replication lag: " + (DateTimeOffset.Now - message.ServerClock).TotalMilliseconds);
+        Log()(message.GetType().Name, "replication lag: " + (DateTimeOffset.Now - message.ServerClock).TotalMilliseconds);
 
         if (message is InsertMessage insert)
         {
@@ -83,6 +83,7 @@ class WalListener
             continue;
           }
 
+          Log()("Change event 1");
           await w.WriteAsync(new ChangeEvent
           {
             Table = update.Relation.RelationName,
@@ -90,6 +91,7 @@ class WalListener
             ChangedColumns = oldTuple
           });
 
+          Log()("Change event 2");
           await w.WriteAsync(new ChangeEvent
           {
             Table = update.Relation.RelationName,
