@@ -18,6 +18,7 @@ export enum Operand {
   GTE = 5,
   LIKE = 6,
   ILIKE = 7,
+  IN = 8,
   UNRECOGNIZED = -1,
 }
 
@@ -47,6 +48,9 @@ export function operandFromJSON(object: any): Operand {
     case 7:
     case "ILIKE":
       return Operand.ILIKE;
+    case 8:
+    case "IN":
+      return Operand.IN;
     case -1:
     case "UNRECOGNIZED":
     default:
@@ -72,6 +76,8 @@ export function operandToJSON(object: Operand): string {
       return "LIKE";
     case Operand.ILIKE:
       return "ILIKE";
+    case Operand.IN:
+      return "IN";
     case Operand.UNRECOGNIZED:
     default:
       return "UNRECOGNIZED";
@@ -116,12 +122,16 @@ export interface ConditionSet {
 export interface Condition {
   column: string;
   operand: Operand;
+  value: ColValue[];
+}
+
+export interface ColValue {
   isNull?: boolean | undefined;
   str?: string | undefined;
   num?: number | undefined;
   b?:
-  | boolean
-  | undefined;
+    | boolean
+    | undefined;
   /**
    * Postgres precision is 1 microsecond.
    * We use micros to preserve full fidelity vs JS defaults.
@@ -187,13 +197,13 @@ export const ClientToServer: MessageFns<ClientToServer> = {
       messageId: isSet(object.messageId)
         ? globalThis.Number(object.messageId)
         : isSet(object.message_id)
-          ? globalThis.Number(object.message_id)
-          : 0,
+        ? globalThis.Number(object.message_id)
+        : 0,
       addSubscriptionToGroup: isSet(object.addSubscriptionToGroup)
         ? AddSubscriptionToGroup.fromJSON(object.addSubscriptionToGroup)
         : isSet(object.add_subscription_to_group)
-          ? AddSubscriptionToGroup.fromJSON(object.add_subscription_to_group)
-          : undefined,
+        ? AddSubscriptionToGroup.fromJSON(object.add_subscription_to_group)
+        : undefined,
     };
   },
 
@@ -313,23 +323,23 @@ export const ServerToClient: MessageFns<ServerToClient> = {
       messageId: isSet(object.messageId)
         ? globalThis.Number(object.messageId)
         : isSet(object.message_id)
-          ? globalThis.Number(object.message_id)
-          : 0,
+        ? globalThis.Number(object.message_id)
+        : 0,
       inReplyTo: isSet(object.inReplyTo)
         ? globalThis.Number(object.inReplyTo)
         : isSet(object.in_reply_to)
-          ? globalThis.Number(object.in_reply_to)
-          : 0,
+        ? globalThis.Number(object.in_reply_to)
+        : 0,
       subscriptionAcknowledged: isSet(object.subscriptionAcknowledged)
         ? SubscriptionAcknowledged.fromJSON(object.subscriptionAcknowledged)
         : isSet(object.subscription_acknowledged)
-          ? SubscriptionAcknowledged.fromJSON(object.subscription_acknowledged)
-          : undefined,
+        ? SubscriptionAcknowledged.fromJSON(object.subscription_acknowledged)
+        : undefined,
       invalidateGroup: isSet(object.invalidateGroup)
         ? InvalidateGroup.fromJSON(object.invalidateGroup)
         : isSet(object.invalidate_group)
-          ? InvalidateGroup.fromJSON(object.invalidate_group)
-          : undefined,
+        ? InvalidateGroup.fromJSON(object.invalidate_group)
+        : undefined,
       error: isSet(object.error) ? Error.fromJSON(object.error) : undefined,
     };
   },
@@ -436,13 +446,13 @@ export const AddSubscriptionToGroup: MessageFns<AddSubscriptionToGroup> = {
       groupId: isSet(object.groupId)
         ? globalThis.String(object.groupId)
         : isSet(object.group_id)
-          ? globalThis.String(object.group_id)
-          : "",
+        ? globalThis.String(object.group_id)
+        : "",
       subscriptionId: isSet(object.subscriptionId)
         ? globalThis.String(object.subscriptionId)
         : isSet(object.subscription_id)
-          ? globalThis.String(object.subscription_id)
-          : "",
+        ? globalThis.String(object.subscription_id)
+        : "",
       conditions: isSet(object.conditions) ? ConditionSet.fromJSON(object.conditions) : undefined,
     };
   },
@@ -538,13 +548,13 @@ export const SubscriptionAcknowledged: MessageFns<SubscriptionAcknowledged> = {
       groupId: isSet(object.groupId)
         ? globalThis.String(object.groupId)
         : isSet(object.group_id)
-          ? globalThis.String(object.group_id)
-          : "",
+        ? globalThis.String(object.group_id)
+        : "",
       subscriptionId: isSet(object.subscriptionId)
         ? globalThis.String(object.subscriptionId)
         : isSet(object.subscription_id)
-          ? globalThis.String(object.subscription_id)
-          : "",
+        ? globalThis.String(object.subscription_id)
+        : "",
       watching: isSet(object.watching) ? globalThis.Boolean(object.watching) : false,
     };
   },
@@ -616,8 +626,8 @@ export const InvalidateGroup: MessageFns<InvalidateGroup> = {
       groupId: isSet(object.groupId)
         ? globalThis.String(object.groupId)
         : isSet(object.group_id)
-          ? globalThis.String(object.group_id)
-          : "",
+        ? globalThis.String(object.group_id)
+        : "",
     };
   },
 
@@ -734,15 +744,7 @@ export const ConditionSet: MessageFns<ConditionSet> = {
 };
 
 function createBaseCondition(): Condition {
-  return {
-    column: "",
-    operand: 0,
-    isNull: undefined,
-    str: undefined,
-    num: undefined,
-    b: undefined,
-    timestampMicros: undefined,
-  };
+  return { column: "", operand: 0, value: [] };
 }
 
 export const Condition: MessageFns<Condition> = {
@@ -753,20 +755,8 @@ export const Condition: MessageFns<Condition> = {
     if (message.operand !== 0) {
       writer.uint32(16).int32(message.operand);
     }
-    if (message.isNull !== undefined) {
-      writer.uint32(400).bool(message.isNull);
-    }
-    if (message.str !== undefined) {
-      writer.uint32(410).string(message.str);
-    }
-    if (message.num !== undefined) {
-      writer.uint32(417).double(message.num);
-    }
-    if (message.b !== undefined) {
-      writer.uint32(424).bool(message.b);
-    }
-    if (message.timestampMicros !== undefined) {
-      writer.uint32(432).int64(message.timestampMicros);
+    for (const v of message.value) {
+      ColValue.encode(v!, writer.uint32(34).fork()).join();
     }
     return writer;
   },
@@ -794,6 +784,88 @@ export const Condition: MessageFns<Condition> = {
           message.operand = reader.int32() as any;
           continue;
         }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.value.push(ColValue.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): Condition {
+    return {
+      column: isSet(object.column) ? globalThis.String(object.column) : "",
+      operand: isSet(object.operand) ? operandFromJSON(object.operand) : 0,
+      value: globalThis.Array.isArray(object?.value) ? object.value.map((e: any) => ColValue.fromJSON(e)) : [],
+    };
+  },
+
+  toJSON(message: Condition): unknown {
+    const obj: any = {};
+    if (message.column !== "") {
+      obj.column = message.column;
+    }
+    if (message.operand !== 0) {
+      obj.operand = operandToJSON(message.operand);
+    }
+    if (message.value?.length) {
+      obj.value = message.value.map((e) => ColValue.toJSON(e));
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<Condition>, I>>(base?: I): Condition {
+    return Condition.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<Condition>, I>>(object: I): Condition {
+    const message = createBaseCondition();
+    message.column = object.column ?? "";
+    message.operand = object.operand ?? 0;
+    message.value = object.value?.map((e) => ColValue.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseColValue(): ColValue {
+  return { isNull: undefined, str: undefined, num: undefined, b: undefined, timestampMicros: undefined };
+}
+
+export const ColValue: MessageFns<ColValue> = {
+  encode(message: ColValue, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.isNull !== undefined) {
+      writer.uint32(400).bool(message.isNull);
+    }
+    if (message.str !== undefined) {
+      writer.uint32(410).string(message.str);
+    }
+    if (message.num !== undefined) {
+      writer.uint32(417).double(message.num);
+    }
+    if (message.b !== undefined) {
+      writer.uint32(424).bool(message.b);
+    }
+    if (message.timestampMicros !== undefined) {
+      writer.uint32(432).int64(message.timestampMicros);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ColValue {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseColValue();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
         case 50: {
           if (tag !== 400) {
             break;
@@ -843,34 +915,26 @@ export const Condition: MessageFns<Condition> = {
     return message;
   },
 
-  fromJSON(object: any): Condition {
+  fromJSON(object: any): ColValue {
     return {
-      column: isSet(object.column) ? globalThis.String(object.column) : "",
-      operand: isSet(object.operand) ? operandFromJSON(object.operand) : 0,
       isNull: isSet(object.isNull)
         ? globalThis.Boolean(object.isNull)
         : isSet(object.is_null)
-          ? globalThis.Boolean(object.is_null)
-          : undefined,
+        ? globalThis.Boolean(object.is_null)
+        : undefined,
       str: isSet(object.str) ? globalThis.String(object.str) : undefined,
       num: isSet(object.num) ? globalThis.Number(object.num) : undefined,
       b: isSet(object.b) ? globalThis.Boolean(object.b) : undefined,
       timestampMicros: isSet(object.timestampMicros)
         ? globalThis.Number(object.timestampMicros)
         : isSet(object.timestamp_micros)
-          ? globalThis.Number(object.timestamp_micros)
-          : undefined,
+        ? globalThis.Number(object.timestamp_micros)
+        : undefined,
     };
   },
 
-  toJSON(message: Condition): unknown {
+  toJSON(message: ColValue): unknown {
     const obj: any = {};
-    if (message.column !== "") {
-      obj.column = message.column;
-    }
-    if (message.operand !== 0) {
-      obj.operand = operandToJSON(message.operand);
-    }
     if (message.isNull !== undefined) {
       obj.isNull = message.isNull;
     }
@@ -889,13 +953,11 @@ export const Condition: MessageFns<Condition> = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<Condition>, I>>(base?: I): Condition {
-    return Condition.fromPartial(base ?? ({} as any));
+  create<I extends Exact<DeepPartial<ColValue>, I>>(base?: I): ColValue {
+    return ColValue.fromPartial(base ?? ({} as any));
   },
-  fromPartial<I extends Exact<DeepPartial<Condition>, I>>(object: I): Condition {
-    const message = createBaseCondition();
-    message.column = object.column ?? "";
-    message.operand = object.operand ?? 0;
+  fromPartial<I extends Exact<DeepPartial<ColValue>, I>>(object: I): ColValue {
+    const message = createBaseColValue();
     message.isNull = object.isNull ?? undefined;
     message.str = object.str ?? undefined;
     message.num = object.num ?? undefined;

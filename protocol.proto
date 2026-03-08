@@ -45,17 +45,21 @@ message ConditionSet {
 message Condition {
   string column = 1;
   Operand operand = 2;
+  repeated ColValue value = 4;
 
+}
+
+message ColValue {
   oneof value {
     bool is_null = 50;
-    
+
     string str = 51;
     double num = 52;
     bool b = 53;
-    
-    // Postgres precision is 1 microsecond. 
+
+    // Postgres precision is 1 microsecond.
     // We use micros to preserve full fidelity vs JS defaults.
-    int64 timestamp_micros = 54; 
+    int64 timestamp_micros = 54;
   }
 }
 
@@ -68,6 +72,7 @@ enum Operand {
   GTE = 5;
   LIKE = 6;
   ILIKE = 7;
+  IN = 8;
 }
 
 message Error {

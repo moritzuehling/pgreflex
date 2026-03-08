@@ -15,6 +15,7 @@ import {
   type Table,
   type Column,
   type SelectedFieldsFlat,
+  arrayContains,
 } from "drizzle-orm";
 import {
   getTableConfig,
@@ -47,7 +48,10 @@ export type Condition<T extends Table> =
       "==" | "!=" | "<" | ">" | "<=" | ">=" | "like",
       string,
     ]
+  | [TypedColumns<T, "string">, "in", string[]]
   | [TypedColumns<T, "number">, "==" | "!=" | "<" | ">" | "<=" | ">=", number]
+  | [TypedColumns<T, "number">, "in", number[]]
+  | [TypedColumns<T, "date">, "==" | "!=" | "<" | ">" | "<=" | ">=", number]
   | [NullableColumns<T>, "==" | "!=", null];
 
 interface SelectConfig<T extends Table> {
@@ -216,6 +220,8 @@ function getCondition<T extends Table>(
       return v == null ? isNull(c) : eq(c, v);
     case "!=":
       return v == null ? isNotNull(c) : eq(c, v);
+    case "in":
+      return arrayContains(c, v);
     default:
       return fns[op](c, v);
   }

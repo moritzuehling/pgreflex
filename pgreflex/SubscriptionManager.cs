@@ -131,136 +131,152 @@ class SubscriptionManager
 
   public bool Check(Condition cond, ChangeEvent ev)
   {
-    var col = ev.ChangedColumns.Find(a => a.ColumnName == cond.Column);
-    if (col == null)
+    var changedCol = ev.ChangedColumns.Find(a => a.ColumnName == cond.Column);
+    if (changedCol == null)
     {
       Warn()($"Column {cond.Column} does not exist in change event for ${ev.Table}");
       return false;
     }
 
 
-    switch (cond.Operand)
+    if (cond.Operand == Operand.In)
+    {
+      foreach (var entry in cond.Value)
+      {
+        if (CheckEq(cond.Operand, entry, changedCol))
+          return true;
+
+        return false;
+      }
+    }
+
+    if (cond.Value.Count != 1)
+      throw new Exception("Must supply exactly 1 comperator!");
+
+    return CheckEq(cond.Operand, cond.Value[0], changedCol);
+  }
+
+  private bool CheckEq(Operand op, ColValue cmpVal, ChangedColumn changedCol)
+  {
+    switch (op)
     {
       case Operand.Eq:
 
-        if (cond.IsNull)
-          return col.Value == null || col.Value == DBNull.Value;
+        if (cmpVal.IsNull)
+          return changedCol.Value == null || changedCol.Value == DBNull.Value;
 
-        if (col.Value == null || col.Value == DBNull.Value)
+        if (changedCol.Value == null || changedCol.Value == DBNull.Value)
           return false;
 
-        if (cond.HasStr)
+        if (cmpVal.HasStr)
         {
-          return (string)cond.Str == (string)col.Value;
+          return (string)cmpVal.Str == (string)changedCol.Value;
         }
 
-        if (cond.HasNum)
-          return (double)cond.Num == (double)col.Value;
+        if (cmpVal.HasNum)
+          return (double)cmpVal.Num == (double)changedCol.Value;
 
-        if (cond.HasB)
-          return (bool)cond.B == (bool)col.Value;
+        if (cmpVal.HasB)
+          return (bool)cmpVal.B == (bool)changedCol.Value;
 
-        if (cond.HasTimestampMicros)
-          return DateTimeOffset.FromUnixTimeMilliseconds((long)cond.TimestampMicros) == (DateTimeOffset)col.Value;
+        if (cmpVal.HasTimestampMicros)
+          return DateTimeOffset.FromUnixTimeMilliseconds((long)cmpVal.TimestampMicros) == (DateTimeOffset)changedCol.Value;
 
         throw new Exception("Unknown operand type!");
 
       case Operand.Neq:
-        if (cond.IsNull)
-          return col.Value != null || col.Value != DBNull.Value;
+        if (cmpVal.IsNull)
+          return changedCol.Value != null || changedCol.Value != DBNull.Value;
 
-        if (col.Value == null || col.Value == DBNull.Value)
+        if (changedCol.Value == null || changedCol.Value == DBNull.Value)
           return true;
 
-        if (cond.HasStr)
-          return (string)cond.Str != (string)col.Value;
+        if (cmpVal.HasStr)
+          return (string)cmpVal.Str != (string)changedCol.Value;
 
-        if (cond.HasNum)
-          return (double)cond.Num != (double)col.Value;
+        if (cmpVal.HasNum)
+          return (double)cmpVal.Num != (double)changedCol.Value;
 
-        if (cond.HasB)
-          return (bool)cond.B != (bool)col.Value;
+        if (cmpVal.HasB)
+          return (bool)cmpVal.B != (bool)changedCol.Value;
 
-        if (cond.HasTimestampMicros)
-          return DateTimeOffset.FromUnixTimeMilliseconds((long)cond.TimestampMicros) != (DateTimeOffset)col.Value;
+        if (cmpVal.HasTimestampMicros)
+          return DateTimeOffset.FromUnixTimeMilliseconds((long)cmpVal.TimestampMicros) != (DateTimeOffset)changedCol.Value;
 
         throw new Exception("Unknown operand type!");
 
       case Operand.Gt:
-        if (col.Value == null || col.Value == DBNull.Value)
+        if (changedCol.Value == null || changedCol.Value == DBNull.Value)
           return false;
 
-        if (cond.HasStr)
-          return cond.Str.CompareTo((string)col.Value) > 0;
+        if (cmpVal.HasStr)
+          return cmpVal.Str.CompareTo((string)changedCol.Value) > 0;
 
-        if (cond.HasNum)
-          return cond.Num.CompareTo((double)col.Value) > 0;
+        if (cmpVal.HasNum)
+          return cmpVal.Num.CompareTo((double)changedCol.Value) > 0;
 
-        if (cond.HasB)
-          return cond.B.CompareTo((bool)col.Value) > 0;
+        if (cmpVal.HasB)
+          return cmpVal.B.CompareTo((bool)changedCol.Value) > 0;
 
-        if (cond.HasTimestampMicros)
-          return DateTimeOffset.FromUnixTimeMilliseconds((long)cond.TimestampMicros) > (DateTimeOffset)col.Value;
+        if (cmpVal.HasTimestampMicros)
+          return DateTimeOffset.FromUnixTimeMilliseconds((long)cmpVal.TimestampMicros) > (DateTimeOffset)changedCol.Value;
 
         throw new Exception("Unknown operand type!");
 
       case Operand.Gte:
-        if (col.Value == null || col.Value == DBNull.Value)
+        if (changedCol.Value == null || changedCol.Value == DBNull.Value)
           return false;
 
-        if (cond.HasStr)
-          return cond.Str.CompareTo((string)col.Value) >= 0;
+        if (cmpVal.HasStr)
+          return cmpVal.Str.CompareTo((string)changedCol.Value) >= 0;
 
-        if (cond.HasNum)
-          return cond.Num.CompareTo((double)col.Value) >= 0;
+        if (cmpVal.HasNum)
+          return cmpVal.Num.CompareTo((double)changedCol.Value) >= 0;
 
-        if (cond.HasB)
-          return cond.B.CompareTo((bool)col.Value) >= 0;
+        if (cmpVal.HasB)
+          return cmpVal.B.CompareTo((bool)changedCol.Value) >= 0;
 
-        if (cond.HasTimestampMicros)
-          return DateTimeOffset.FromUnixTimeMilliseconds((long)cond.TimestampMicros) >= (DateTimeOffset)col.Value;
+        if (cmpVal.HasTimestampMicros)
+          return DateTimeOffset.FromUnixTimeMilliseconds((long)cmpVal.TimestampMicros) >= (DateTimeOffset)changedCol.Value;
 
         throw new Exception("Unknown operand type!");
 
 
       case Operand.Lt:
-        if (col.Value == null || col.Value == DBNull.Value)
+        if (changedCol.Value == null || changedCol.Value == DBNull.Value)
           return false;
 
-        if (cond.HasStr)
-          return cond.Str.CompareTo((string)col.Value) < 0;
+        if (cmpVal.HasStr)
+          return cmpVal.Str.CompareTo((string)changedCol.Value) < 0;
 
-        if (cond.HasNum)
-          return cond.Num.CompareTo((double)col.Value) < 0;
+        if (cmpVal.HasNum)
+          return cmpVal.Num.CompareTo((double)changedCol.Value) < 0;
 
-        if (cond.HasB)
-          return cond.B.CompareTo((bool)col.Value) < 0;
+        if (cmpVal.HasB)
+          return cmpVal.B.CompareTo((bool)changedCol.Value) < 0;
 
-        if (cond.HasTimestampMicros)
-          return DateTimeOffset.FromUnixTimeMilliseconds((long)cond.TimestampMicros) < (DateTimeOffset)col.Value;
+        if (cmpVal.HasTimestampMicros)
+          return DateTimeOffset.FromUnixTimeMilliseconds((long)cmpVal.TimestampMicros) < (DateTimeOffset)changedCol.Value;
 
         throw new Exception("Unknown operand type!");
 
       case Operand.Lte:
-        if (col.Value == null || col.Value == DBNull.Value)
+        if (changedCol.Value == null || changedCol.Value == DBNull.Value)
           return false;
 
-        if (cond.HasStr)
-          return cond.Str.CompareTo((string)col.Value) <= 0;
+        if (cmpVal.HasStr)
+          return cmpVal.Str.CompareTo((string)changedCol.Value) <= 0;
 
-        if (cond.HasNum)
-          return cond.Num.CompareTo((double)col.Value) <= 0;
+        if (cmpVal.HasNum)
+          return cmpVal.Num.CompareTo((double)changedCol.Value) <= 0;
 
-        if (cond.HasB)
-          return cond.B.CompareTo((bool)col.Value) <= 0;
+        if (cmpVal.HasB)
+          return cmpVal.B.CompareTo((bool)changedCol.Value) <= 0;
 
-        if (cond.HasTimestampMicros)
-          return DateTimeOffset.FromUnixTimeMilliseconds((long)cond.TimestampMicros) <= (DateTimeOffset)col.Value;
-
+        if (cmpVal.HasTimestampMicros)
+          return DateTimeOffset.FromUnixTimeMilliseconds((long)cmpVal.TimestampMicros) <= (DateTimeOffset)changedCol.Value;
         throw new Exception("Unknown operand type!");
-
-      default:
-        throw new Exception("unspported operand :(");
     }
+    throw new Exception("unspported operand :(");
   }
 }
