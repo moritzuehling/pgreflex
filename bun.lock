@@ -19,15 +19,15 @@
     },
     "packages/pgreflex": {
       "name": "pgreflex",
-      "version": "0.0.3",
+      "version": "0.0.4",
       "dependencies": {
         "@bufbuild/protobuf": "^2.11.0",
         "@peculiar/x509": "^1.14.3",
-        "ts-proto": "^2.11.1",
       },
       "devDependencies": {
         "@types/node": "^24.10.9",
         "bumpp": "^10.4.0",
+        "ts-proto": "^2.11.1",
         "tsdown": "^0.18.4",
         "typescript": "^5.9.3",
         "vitest": "^4.0.18",

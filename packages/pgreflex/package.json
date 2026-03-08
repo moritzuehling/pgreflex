@@ -36,7 +36,8 @@
     "bumpp": "^10.4.0",
     "tsdown": "^0.18.4",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.18"
+    "vitest": "^4.0.18",
+    "ts-proto": "^2.11.1"
   },
   "peerDependencies": {
     "@trpc/server": ">=11.8.1",
@@ -44,7 +45,6 @@
   },
   "dependencies": {
     "@peculiar/x509": "^1.14.3",
-    "ts-proto": "^2.11.1",
     "@bufbuild/protobuf": "^2.11.0"
   }
 }
