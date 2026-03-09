@@ -15,8 +15,8 @@ import {
   type Table,
   type Column,
   type SelectedFieldsFlat,
-  arrayContains,
   sql,
+  inArray,
 } from "drizzle-orm";
 import {
   getTableConfig,
@@ -253,7 +253,7 @@ function getCondition<T extends Table>(t: T, condition: Condition<T>): SQL {
     case "!=":
       return v == null ? isNotNull(c) : eq(c, v);
     case "in":
-      return arrayContains(c, v);
+      return inArray(c, v);
     default:
       return fns[op](c, v);
   }
