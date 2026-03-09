@@ -1,6 +1,6 @@
 {
   "name": "pgreflex",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Reactive Postgres",
   "type": "module",
   "license": "MIT",

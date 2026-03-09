@@ -16,6 +16,7 @@ import {
   type Column,
   type SelectedFieldsFlat,
   arrayContains,
+  sql,
 } from "drizzle-orm";
 import {
   getTableConfig,
@@ -23,7 +24,7 @@ import {
   type PgQueryResultHKT,
 } from "drizzle-orm/pg-core";
 import type { ReflexSubscribeTo } from "./connection";
-import { toWriteCondition } from "./util/toWireCondition";
+import { toWireCondition } from "./util/toWireCondition";
 
 export type AnyPgDb = PgDatabase<PgQueryResultHKT>;
 
@@ -52,13 +53,30 @@ export type Condition<T extends Table> =
   | [TypedColumns<T, "number">, "==" | "!=" | "<" | ">" | "<=" | ">=", number]
   | [TypedColumns<T, "number">, "in", number[]]
   | [TypedColumns<T, "date">, "==" | "!=" | "<" | ">" | "<=" | ">=", number]
-  | [NullableColumns<T>, "==" | "!=", null];
+  | [NullableColumns<T>, "==" | "!=", null]
+  | undefined
+  | false
+  | null;
 
 interface SelectConfig<T extends Table> {
   limit?: number;
   offset?: number;
 
-  orderBy?: [TypedColumns<T, "string" | "number">, "desc" | "asc"][];
+  orderBy?: [
+    TypedColumns<
+      T,
+      | "string"
+      | "number"
+      | "date"
+      | "duration"
+      | "dateDuration"
+      | "boolean"
+      | "bigint"
+      | "localDate"
+      | "localTime"
+    >,
+    "desc" | "asc",
+  ][];
 }
 
 export function reflexDb<DB extends AnyPgDb>(
@@ -70,7 +88,10 @@ export function reflexDb<DB extends AnyPgDb>(
       await subscribeTo?.({
         table: getTableConfig(tbl).name,
         schema: getTableConfig(tbl).schema as string,
-        conditions: conditions.map(toWriteCondition),
+        conditions: conditions
+          .filter((a) => a !== null && a !== false && a !== undefined)
+          .map(toWireCondition)
+          .filter((a) => a != null),
       });
 
       return await selectSingle(db, tbl, conditions);
@@ -82,7 +103,9 @@ export function reflexDb<DB extends AnyPgDb>(
       await subscribeTo?.({
         table: getTableConfig(tbl).name,
         schema: getTableConfig(tbl).schema as string,
-        conditions: conditions.map(toWriteCondition),
+        conditions: conditions
+          .filter((a) => a !== null && a !== false && a !== undefined)
+          .map(toWireCondition),
       });
       return await selectSingleOptional(db, tbl, conditions);
     },
@@ -94,7 +117,9 @@ export function reflexDb<DB extends AnyPgDb>(
       await subscribeTo?.({
         table: getTableConfig(tbl).name,
         schema: getTableConfig(tbl).schema as string,
-        conditions: conditions.map(toWriteCondition),
+        conditions: conditions
+          .filter((a) => a !== null && a !== false && a !== undefined)
+          .map(toWireCondition),
       });
       return await select(db, tbl, conditions, config);
     },
@@ -110,7 +135,9 @@ export function reflexDb<DB extends AnyPgDb>(
       await subscribeTo?.({
         table: getTableConfig(tbl).name,
         schema: getTableConfig(tbl).schema as string,
-        conditions: conditions.map(toWriteCondition),
+        conditions: conditions
+          .filter((a) => a !== null && a !== false && a !== undefined)
+          .map(toWireCondition),
       });
       return await selectColumns(db, tbl, select, conditions, config);
     },
@@ -207,10 +234,13 @@ function selectColumns<
   return orderBy as typeof where;
 }
 
-function getCondition<T extends Table>(
-  t: T,
-  [colName, op, v]: Condition<T>,
-): SQL {
+function getCondition<T extends Table>(t: T, condition: Condition<T>): SQL {
+  if (!condition) {
+    return sql`true`;
+  }
+
+  const [colName, op, v] = condition;
+
   const c = t[colName] as Column;
 
   switch (op) {

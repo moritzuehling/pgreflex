@@ -8,11 +8,10 @@ import {
 
 type WireConditionValue = ColValue;
 
-export function toWriteCondition<T extends AnyPgTable>([
-  col,
-  op,
-  val,
-]: Condition<T>): ConditionSet["conditions"][number] {
+export function toWireCondition<T extends AnyPgTable>([col, op, val]: Exclude<
+  Condition<T>,
+  null | undefined | false
+>): ConditionSet["conditions"][number] {
   return {
     column: col as string,
     operand: operands[op],
@@ -20,7 +19,10 @@ export function toWriteCondition<T extends AnyPgTable>([
   };
 }
 
-const operands: Record<Condition<any>[1], Operand> = {
+const operands: Record<
+  Exclude<Condition<any>, undefined | false | null>[1],
+  Operand
+> = {
   "==": Operand.EQ,
   "!=": Operand.NEQ,
   "<": Operand.LT,
