@@ -52,7 +52,8 @@ export type Condition<T extends Table> =
   | [TypedColumns<T, "string">, "in", string[]]
   | [TypedColumns<T, "number">, "==" | "!=" | "<" | ">" | "<=" | ">=", number]
   | [TypedColumns<T, "number">, "in", number[]]
-  | [TypedColumns<T, "date">, "==" | "!=" | "<" | ">" | "<=" | ">=", number]
+  | [TypedColumns<T, "date">, "==" | "!=" | "<" | ">" | "<=" | ">=", Date]
+  | [TypedColumns<T, "date">, "in", Date[]]
   | [NullableColumns<T>, "==" | "!=", null]
   | undefined
   | false
