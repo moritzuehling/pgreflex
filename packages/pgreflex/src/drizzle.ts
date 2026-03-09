@@ -22,6 +22,7 @@ import {
   getTableConfig,
   type PgDatabase,
   type PgQueryResultHKT,
+  type PgSelectBuilder,
 } from "drizzle-orm/pg-core";
 import type { ReflexSubscribeTo } from "./connection";
 import { toWireCondition } from "./util/toWireCondition";
@@ -212,7 +213,7 @@ function selectColumns<
   select: SF,
   conditions: Condition<T>[],
   config: SelectConfig<T> = {},
-) {
+): Promise<Awaited<PgSelectBuilder<SF, "db">>> {
   const from = db.select(select).from<T>(tbl as any);
 
   const where = from.where(and(...conditions.map((c) => getCondition(tbl, c))));
@@ -232,7 +233,7 @@ function selectColumns<
       ) as typeof where)
     : offset;
 
-  return orderBy as typeof where;
+  return orderBy as unknown as Promise<Awaited<PgSelectBuilder<SF, "db">>>;
 }
 
 function getCondition<T extends Table>(t: T, condition: Condition<T>): SQL {

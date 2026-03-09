@@ -34,7 +34,7 @@ const operands: Record<
 };
 
 function value(
-  v: string | Date | number | boolean | null | string[] | number[],
+  v: string | Date | number | boolean | null | string[] | number[] | Date[],
 ): WireConditionValue[] {
   if (v === null || v === undefined) {
     return [{ isNull: true }];
@@ -59,8 +59,10 @@ function value(
   if (v instanceof Object) {
     if (isStringArray(v)) {
       return v.map((a) => ({ str: a }));
-    } else {
+    } else if (isNumberArray(v)) {
       return v.map((a) => ({ num: a }));
+    } else {
+      return v.map((a) => ({ timestampMicros: a.getTime() }));
     }
   }
 
@@ -68,8 +70,11 @@ function value(
   throw new Error("Unreachable!");
 }
 
-function isStringArray(x: string[] | number[]): x is string[] {
+function isStringArray(x: any[]): x is string[] {
   return typeof x[0] === "string";
+}
+function isNumberArray(x: any[]): x is number[] {
+  return typeof x[0] === "number";
 }
 
 function assertNever(x: never) {}
