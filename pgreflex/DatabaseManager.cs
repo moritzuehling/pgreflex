@@ -58,11 +58,10 @@ public class DatabaseManager
     await using var command = DataSource.CreateCommand("SELECT client_certificate_hash FROM pgreflex.client_authentications WHERE expires_at > CURRENT_TIMESTAMP");
     List<string> res = new();
     await using var reader = await command.ExecuteReaderAsync();
-    await reader.ReadAsync();
-    do
+    while (await reader.ReadAsync())
     {
       res.Add(reader.GetString(0));
-    } while (await reader.ReadAsync());
+    }
 
     return res;
   }

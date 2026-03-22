@@ -132,7 +132,7 @@ class ReplicationManager : IDisposable
     }
     catch (Exception ex)
     {
-      Log()($"error remote={remote} {ex.GetType().Name}: {ex.Message}");
+      Log()($"{ex.GetType().Name}: {ex.Message} {ex.StackTrace}");
     }
     finally
     {

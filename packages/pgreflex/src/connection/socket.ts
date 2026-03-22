@@ -44,21 +44,24 @@ export function connect({ cert, server }: ConnectInfo): Connection {
     cert: cert.certificatePem,
     servername: server.host,
     rejectUnauthorized: false,
-
-    checkServerIdentity: (_hostname, cert) => {
-      if (!cert?.raw) return new Error("No server certificate presented.");
-
-      const pin = computeSpkiPinBase64(cert.raw);
-      if (pin !== server.certificate_hash) {
-        return new Error(
-          `Server certificate pin mismatch. expected=${server.certificate_hash} got=${pin}`,
-        );
-      }
-      return undefined;
-    },
   });
 
   socket.on("secureConnect", () => {
+    const remoteCert = socket.getPeerX509Certificate()!;
+    const pin = computeSpkiPinBase64(remoteCert.raw!);
+    if (pin !== server.certificate_hash) {
+      console.error(
+        "fail",
+        `Server certificate pin mismatch. expected=${server.certificate_hash} got=${pin}`,
+      );
+      onConnectFail(
+        new Error(
+          `Server certificate pin mismatch. expected=${server.certificate_hash} got=${pin}`,
+        ),
+      );
+      return;
+    }
+    console.log("[pgreflex] Server certificate validated, connected!");
     onConnected();
   });
 
