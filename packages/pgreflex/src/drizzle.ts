@@ -8,10 +8,10 @@ import {
   lt,
   gt,
   lte,
-  type ColumnDataType,
-  type SQL,
   asc,
   desc,
+  type ColumnDataType,
+  type SQL,
   type Table,
   type Column,
   type SelectedFieldsFlat,
@@ -81,10 +81,7 @@ interface SelectConfig<T extends Table> {
   ][];
 }
 
-export function reflexDb<DB extends AnyPgDb>(
-  db: DB,
-  subscribeTo?: ReflexSubscribeTo,
-) {
+export function reflexDb(db: AnyPgDb, subscribeTo?: ReflexSubscribeTo) {
   return {
     async selectSingle<T extends Table>(tbl: T, conditions: Condition<T>[]) {
       await subscribeTo?.({
@@ -146,7 +143,7 @@ export function reflexDb<DB extends AnyPgDb>(
   };
 }
 
-export type ReflexDB<DB extends AnyPgDb> = ReturnType<typeof reflexDb<DB>>;
+export type ReflexDB = ReturnType<typeof reflexDb>;
 
 async function selectSingle<DB extends AnyPgDb, T extends Table>(
   db: DB,

@@ -9,7 +9,7 @@ import { createTRPCReact } from "@trpc/react-query";
 import type { AppRouter } from "../server/router";
 
 export const queryClient = new QueryClient();
-const trpcClient = createTRPCClient<AppRouter>({
+export const trpcClient = createTRPCClient<AppRouter>({
   links: [
     splitLink({
       condition: (op) => op.type == "subscription",
@@ -20,6 +20,7 @@ const trpcClient = createTRPCClient<AppRouter>({
 });
 
 export const trpc = createTRPCReact<AppRouter>();
+
 /*
 export const trpc = createTRPCOptionsProxy<AppRouter>({
   client: trpcClient,
