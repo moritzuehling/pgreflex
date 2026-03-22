@@ -7,7 +7,7 @@ const connection = reflexConnection(db);
 while (true) {
   const group = connection.createGroup();
   const myDb = reflexDb(db, group.subscribeTo);
-  const team = await myDb.selectSingle(teamsTable, [
+  const team = await myDb.selectSingleOptional(teamsTable, [
     ["id", "==", "5tBTGcA8rfskJ1kKg3Yc"],
   ]);
   console.clear();
