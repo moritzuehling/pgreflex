@@ -38,7 +38,6 @@ class SubscriptionList
 
   public void Remove(List<string> groupIDs)
   {
-
     var origTables = _tables;
     var newTables = origTables;
     foreach (var t in origTables)
@@ -47,6 +46,19 @@ class SubscriptionList
 
     _tables = newTables;
     Debug();
+  }
+
+  public void RemoveSingle(string groupId)
+  {
+    var origTables = _tables;
+    var newTables = origTables;
+    foreach (var t in origTables)
+      newTables = origTables.SetItem(t.Key, t.Value.RemoveAll(a => groupId == a.GroupId));
+
+
+    _tables = newTables;
+    Debug();
+
   }
 
   private void Debug()

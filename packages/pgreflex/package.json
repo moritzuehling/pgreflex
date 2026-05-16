@@ -40,8 +40,8 @@
     "ts-proto": "^2.11.1"
   },
   "peerDependencies": {
-    "@trpc/server": ">=11.8.1",
-    "drizzle-orm": ">=0.45.0"
+    "@trpc/server": "catalog:",
+    "drizzle-orm": "catalog:"
   },
   "dependencies": {
     "@peculiar/x509": "^1.14.3",

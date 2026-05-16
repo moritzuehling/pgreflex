@@ -65,11 +65,18 @@ export function reflexConnection(db: AnyPgDb) {
       get isInvalidated() {
         return !invalidateGroupFn.has(groupId);
       },
-
       get status() {
         return {
           connectionStatus: currentSocket?.connected,
         };
+      },
+
+      [Symbol.dispose]() {
+        if (invalidateGroupFn.has(groupId)) {
+          currentSocket?.send({
+            cancelGroup: { groupId },
+          });
+        }
       },
     };
   }

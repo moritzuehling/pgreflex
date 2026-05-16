@@ -19,7 +19,6 @@ export function reflexTrpc(db: AnyPgDb) {
     TInputOut,
     TSubOuput,
     TOutputIn,
-    TOutputOut,
   >(
     proc: TRPCProcedureBuilder<
       TContext,
@@ -28,7 +27,7 @@ export function reflexTrpc(db: AnyPgDb) {
       TInputIn,
       TInputOut,
       UnsetMarker,
-      void,
+      UnsetMarker,
       false
     >,
     fn: (
@@ -37,17 +36,23 @@ export function reflexTrpc(db: AnyPgDb) {
       },
     ) => TSubOuput,
   ) {
-    return proc.subscription(async function* manageSubscription(opts) {
-      while (!opts.signal?.aborted) {
-        const group = await connection.createGroup();
+    return proc.subscription<AsyncGenerator<TSubOuput, void, void>>(
+      async function* manageSubscription(opts) {
+        const abortPromise = new Promise((res) =>
+          opts.signal?.addEventListener("abort", res),
+        );
 
-        const newOpts = {
-          ...opts,
-          db: reflexDb(db, group.subscribeTo),
-        };
-        yield await fn(newOpts);
-        await group.invalidated;
-      }
-    });
+        while (!opts.signal?.aborted) {
+          using group = connection.createGroup();
+
+          const newOpts = {
+            ...opts,
+            db: reflexDb(db, group.subscribeTo),
+          };
+          yield await fn(newOpts);
+          await Promise.race([group.invalidated, abortPromise]);
+        }
+      },
+    );
   };
 }

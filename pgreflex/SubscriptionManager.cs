@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using System.Runtime.ConstrainedExecution;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using System.Threading.Channels;
 using Pgreflex.Protocol;
@@ -67,6 +68,13 @@ class SubscriptionManager
               }
             });
           }
+        }
+
+
+        var cg = cmsg.Message.CancelGroup;
+        if (cg != null)
+        {
+          subs.RemoveSingle(cg.GroupId);
         }
       }
       else if (ce != null)

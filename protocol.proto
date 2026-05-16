@@ -6,8 +6,23 @@ message ClientToServer {
 
   oneof contents {
     AddSubscriptionToGroup add_subscription_to_group = 51;
+    CancelGroup cancel_group = 52;
   }
 }
+
+message AddSubscriptionToGroup {
+  string group_id = 1;
+  string subscription_id = 2;
+  ConditionSet conditions = 3;
+}
+
+
+message CancelGroup {
+  string group_id = 1;
+}
+
+
+// ---- ServerToClient -------
 
 message ServerToClient {
   int32 message_id = 1;
@@ -19,13 +34,6 @@ message ServerToClient {
     Error error = 52;
   }
 }
-
-message AddSubscriptionToGroup {
-  string group_id = 1;
-  string subscription_id = 2;
-  ConditionSet conditions = 3;
-}
-
 message SubscriptionAcknowledged {
   string group_id = 1;
   string subscription_id = 2;
@@ -46,7 +54,6 @@ message Condition {
   string column = 1;
   Operand operand = 2;
   repeated ColValue value = 4;
-
 }
 
 message ColValue {
